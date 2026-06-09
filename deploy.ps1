@@ -1,6 +1,8 @@
 # ============================================
-# Deploy script — push build to `production` branch
+# Deploy script — push build to `production` branch via worktree
 # ============================================
+# Foloseste git worktree, deci NU atinge node_modules sau working tree-ul main.
+#
 # Usage:
 #   .\deploy.ps1                 # build + deploy
 #   .\deploy.ps1 -SkipBuild      # deploy ce e deja in dist/
@@ -9,8 +11,7 @@
 param(
   [switch]$SkipBuild,
   [string]$Message = "deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')",
-  [string]$ProdBranch = "production",
-  [string]$SourceBranch = "main"
+  [string]$ProdBranch = "production"
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,79 +24,105 @@ function Fail($msg) { Write-Host "ERR $msg" -ForegroundColor Red; exit 1 }
 if (-not (Test-Path "package.json")) { Fail "Ruleaza din root-ul proiectului (unde e package.json)." }
 if (-not (Test-Path ".git"))         { Fail "Nu e un git repo. Ruleaza intai: git init && git remote add origin <URL>." }
 
-# Save the current branch so we can return to it at the end
 $startBranch = (git rev-parse --abbrev-ref HEAD).Trim()
-Step "Plecam de pe branch-ul: $startBranch"
-
-# Refuza daca sunt schimbari necommit-uite pe sursa
-$dirty = (git status --porcelain) | Out-String
-if ($dirty.Trim().Length -gt 0) {
-  Fail "Ai modificari necommit-uite. Commit/stash inainte de deploy."
-}
+Step "Branch curent: $startBranch"
 
 # --- Build ---
 if (-not $SkipBuild) {
-  Step "Build productie (npm run build)..."
-  npm run build
+  Step "Build productie..."
+  # Folosesc explicit binarul local Vite, ca sa evit conflicte cu alte tool-uri 'vite' din PATH
+  if (Test-Path "node_modules\.bin\vite.cmd") {
+    & node_modules\.bin\vite.cmd build
+  } elseif (Test-Path "node_modules\vite\bin\vite.js") {
+    & node node_modules\vite\bin\vite.js build
+  } else {
+    Fail "Vite local nu exista. Ruleaza 'npm install' intai."
+  }
   if ($LASTEXITCODE -ne 0) { Fail "Build esuat." }
   Ok "Build complet."
 } else {
-  Step "Sar peste build (folosesc dist/ existent)."
+  Step "Sar peste build."
 }
 
-if (-not (Test-Path "dist/index.html")) { Fail "dist/index.html lipseste. Ruleaza fara -SkipBuild." }
+if (-not (Test-Path "dist\index.html")) { Fail "dist\index.html lipseste. Ruleaza fara -SkipBuild." }
 
-# Asigura-te ca exista .htaccess pentru SPA
+# Include .htaccess si .cpanel.yml in dist
 if (Test-Path ".htaccess") {
   Copy-Item ".htaccess" "dist\.htaccess" -Force
-  Ok "Am inclus .htaccess in dist/."
+  Ok "Inclus .htaccess in dist/."
 }
-
-# Include .cpanel.yml pentru Deploy HEAD Commit din cPanel
 if (Test-Path ".cpanel.yml") {
   Copy-Item ".cpanel.yml" "dist\.cpanel.yml" -Force
-  Ok "Am inclus .cpanel.yml in dist/."
+  Ok "Inclus .cpanel.yml in dist/."
 }
 
-# --- Snapshot dist/ in afara repo-ului ---
-$tmp = Join-Path $env:TEMP "mom-duo2-deploy-$(Get-Random)"
-New-Item -ItemType Directory -Path $tmp | Out-Null
-Copy-Item "dist\*" $tmp -Recurse -Force
-Ok "Snapshot in $tmp"
+# --- Pregateste worktree-ul pentru production ---
+$worktreePath = Join-Path (Split-Path -Parent (Get-Location)) "_deploy-mom-duo2"
 
-# --- Switch pe production branch ---
-$hasProd = (git branch --list $ProdBranch) -ne $null -and (git branch --list $ProdBranch).Length -gt 0
-if ($hasProd) {
-  Step "Switch pe $ProdBranch (existent)..."
-  git checkout $ProdBranch
+if (Test-Path $worktreePath) {
+  Step "Curat worktree vechi: $worktreePath"
+  git worktree remove $worktreePath --force 2>$null | Out-Null
+  if (Test-Path $worktreePath) {
+    Remove-Item $worktreePath -Recurse -Force
+  }
+}
+
+# Verifica daca branch-ul production exista local sau pe remote
+$hasLocal  = (git branch --list $ProdBranch) -ne $null -and (git branch --list $ProdBranch).Trim().Length -gt 0
+$hasRemote = (git ls-remote --heads origin $ProdBranch 2>$null).Trim().Length -gt 0
+
+if ($hasLocal) {
+  Step "Adaug worktree pe branch existent $ProdBranch"
+  git worktree add $worktreePath $ProdBranch
+} elseif ($hasRemote) {
+  Step "Adaug worktree pe baza branch-ului remote origin/$ProdBranch"
+  git fetch origin $ProdBranch
+  git worktree add -b $ProdBranch $worktreePath "origin/$ProdBranch"
 } else {
-  Step "Creez branch orphan $ProdBranch..."
+  Step "Creez worktree cu branch orphan $ProdBranch"
+  # Trick: creem branch-ul orphan intr-un commit gol mai intai
+  $emptyTree = (git hash-object -t tree --stdin) 2>$null
+  # Mai simplu: facem worktree + orphan in folder
+  git worktree add --detach $worktreePath
+  Push-Location $worktreePath
   git checkout --orphan $ProdBranch
-  git rm -rf . 2>$null | Out-Null
+  Pop-Location
 }
 
-# --- Curata branch-ul de continut vechi (pastreaza .git) ---
+if ($LASTEXITCODE -ne 0) { Fail "Worktree esuat." }
+
+# --- Curat continutul vechi din worktree (pastreaza .git) ---
+Push-Location $worktreePath
 Get-ChildItem -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
+Pop-Location
 
-# --- Copiaza build-ul ---
-Copy-Item "$tmp\*" "." -Recurse -Force
-Remove-Item $tmp -Recurse -Force
+# --- Copiaza build-ul nou in worktree ---
+Copy-Item "dist\*" $worktreePath -Recurse -Force
+# Copy-Item nu copiaza fisierele ascunse cu wildcard *, asa ca le iau explicit
+Get-ChildItem "dist" -Force -File | Where-Object { $_.Name -like ".*" } | ForEach-Object {
+  Copy-Item $_.FullName $worktreePath -Force
+}
 
-# --- Commit + push ---
+# --- Commit + push din worktree ---
+Push-Location $worktreePath
 git add -A
 $staged = (git diff --cached --name-only) | Out-String
 if ($staged.Trim().Length -eq 0) {
   Step "Nimic schimbat in build, nu fac commit."
 } else {
   git commit -m $Message
+  if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "Commit esuat." }
   Step "Push catre origin/$ProdBranch..."
   git push -u origin $ProdBranch
-  if ($LASTEXITCODE -ne 0) { Fail "Push esuat. Verifica remote-ul." }
+  if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "Push esuat. Verifica remote-ul." }
   Ok "Push reusit."
 }
+Pop-Location
 
-# --- Inapoi pe branch-ul initial ---
-git checkout $startBranch
-Ok "Inapoi pe $startBranch. Gata!"
+# --- Curat worktree-ul ---
+git worktree remove $worktreePath --force
+Ok "Worktree curatat."
 
-Write-Host "`nUrmatorul pas: in cPanel -> Git Version Control -> Update from Remote." -ForegroundColor Yellow
+Write-Host "`nUrmator pas in cPanel:" -ForegroundColor Yellow
+Write-Host "  1. Update from Remote" -ForegroundColor Yellow
+Write-Host "  2. Deploy HEAD Commit" -ForegroundColor Yellow
