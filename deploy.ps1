@@ -51,6 +51,12 @@ if (Test-Path ".htaccess") {
   Ok "Am inclus .htaccess in dist/."
 }
 
+# Include .cpanel.yml pentru Deploy HEAD Commit din cPanel
+if (Test-Path ".cpanel.yml") {
+  Copy-Item ".cpanel.yml" "dist\.cpanel.yml" -Force
+  Ok "Am inclus .cpanel.yml in dist/."
+}
+
 # --- Snapshot dist/ in afara repo-ului ---
 $tmp = Join-Path $env:TEMP "mom-duo2-deploy-$(Get-Random)"
 New-Item -ItemType Directory -Path $tmp | Out-Null
