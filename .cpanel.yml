@@ -1,7 +1,8 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/wdrmopki/public_html/
+    - export DEPLOYPATH=/home/wdrmopki/demolingo.dobre-paloti.ro
+    - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R index.html $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH
     - /bin/cp .htaccess $DEPLOYPATH
