@@ -2,80 +2,122 @@
 // Audio Engine — Text-to-Speech + Speech Recognition
 // ============================================
 
-let speechSynthReady = false;
 let voices = [];
+let voicesReadyPromise = null;
+let cachedGermanVoice = null;
 
-// --- Text-to-Speech ---
+// Quality preference order: prefer named neural/natural voices, then native German voices.
+const GERMAN_VOICE_PREFERENCES = [
+  // Microsoft Edge / Windows — Neural voices (highest quality)
+  /Microsoft.*(Katja|Conrad|Amala|Killian).*Neural/i,
+  /Microsoft.*(Katja|Conrad|Amala|Killian)/i,
+  // Google Chrome
+  /Google Deutsch/i,
+  /Google.*German/i,
+  // Apple (macOS / iOS)
+  /Anna.*(Enhanced|Premium)/i,
+  /Helena.*(Enhanced|Premium)/i,
+  /Petra.*(Enhanced|Premium)/i,
+  /Anna|Helena|Petra|Markus|Yannick/i,
+  // Other markers of higher quality
+  /(natural|neural|enhanced|premium|wavenet)/i,
+];
+
 function loadVoices() {
   voices = window.speechSynthesis?.getVoices() || [];
-  speechSynthReady = voices.length > 0;
+  return voices;
 }
 
-// Voices load async in some browsers
-if (window.speechSynthesis) {
-  loadVoices();
-  window.speechSynthesis.onvoiceschanged = loadVoices;
+function waitForVoices() {
+  if (voicesReadyPromise) return voicesReadyPromise;
+  voicesReadyPromise = new Promise((resolve) => {
+    if (!window.speechSynthesis) { resolve([]); return; }
+    loadVoices();
+    if (voices.length > 0) { resolve(voices); return; }
+
+    let attempts = 0;
+    const tick = () => {
+      loadVoices();
+      if (voices.length > 0 || attempts > 20) {
+        resolve(voices);
+      } else {
+        attempts++;
+        setTimeout(tick, 150);
+      }
+    };
+    window.speechSynthesis.onvoiceschanged = () => {
+      loadVoices();
+      if (voices.length > 0) resolve(voices);
+    };
+    tick();
+  });
+  return voicesReadyPromise;
 }
 
-function getGermanVoice() {
+if (window.speechSynthesis) waitForVoices();
+
+function pickBestGermanVoice() {
+  if (cachedGermanVoice) return cachedGermanVoice;
   if (!voices.length) loadVoices();
-  // Try to find a German voice (de-DE preferred)
-  return voices.find(v => v.lang === 'de-DE') 
-    || voices.find(v => v.lang.startsWith('de'))
-    || voices.find(v => v.lang === 'de')
-    || null;
+
+  const germanVoices = voices.filter(v => /^de(-|_|$)/i.test(v.lang));
+  if (germanVoices.length === 0) {
+    cachedGermanVoice = voices.find(v => v.lang === 'de') || null;
+    return cachedGermanVoice;
+  }
+
+  for (const pattern of GERMAN_VOICE_PREFERENCES) {
+    const match = germanVoices.find(v => pattern.test(v.name));
+    if (match) { cachedGermanVoice = match; return match; }
+  }
+  // Prefer local voices over remote ones, then de-DE specifically
+  const local = germanVoices.find(v => v.localService && v.lang === 'de-DE')
+    || germanVoices.find(v => v.localService)
+    || germanVoices.find(v => v.lang === 'de-DE')
+    || germanVoices[0];
+  cachedGermanVoice = local;
+  return local;
+}
+
+function speakWith(text, { rate, pitch = 1, lang = 'de-DE' }) {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis) { resolve(); return; }
+    window.speechSynthesis.cancel();
+
+    const go = () => {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = lang;
+      utter.rate = rate;
+      utter.pitch = pitch;
+      utter.volume = 1;
+      const voice = pickBestGermanVoice();
+      if (voice) utter.voice = voice;
+
+      utter.onend = () => resolve();
+      utter.onerror = (e) => { console.warn('TTS error:', e?.error); resolve(); };
+
+      // Safety: some browsers stall — kick the queue
+      window.speechSynthesis.speak(utter);
+      setTimeout(() => {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+      }, 100);
+    };
+
+    if (voices.length === 0) {
+      waitForVoices().then(go);
+    } else {
+      go();
+    }
+  });
 }
 
 export function speak(text, lang = 'de-DE') {
-  return new Promise((resolve, reject) => {
-    if (!window.speechSynthesis) {
-      console.warn('Speech synthesis not supported');
-      resolve();
-      return;
-    }
-    
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = 0.85; // Slightly slower for learners
-    utterance.pitch = 1;
-    
-    const germanVoice = getGermanVoice();
-    if (germanVoice) {
-      utterance.voice = germanVoice;
-    }
-    
-    utterance.onend = () => resolve();
-    utterance.onerror = (e) => {
-      console.warn('Speech error:', e);
-      resolve(); // Don't reject, just continue
-    };
-    
-    window.speechSynthesis.speak(utterance);
-  });
+  // Natural speed for learners: 0.92 sounds close to native but understandable
+  return speakWith(text, { rate: 0.92, pitch: 1.02, lang });
 }
 
 export function speakSlow(text, lang = 'de-DE') {
-  return new Promise((resolve) => {
-    if (!window.speechSynthesis) { resolve(); return; }
-    
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = 0.6; // Much slower
-    utterance.pitch = 1;
-    
-    const germanVoice = getGermanVoice();
-    if (germanVoice) utterance.voice = germanVoice;
-    
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
-    
-    window.speechSynthesis.speak(utterance);
-  });
+  return speakWith(text, { rate: 0.65, pitch: 1, lang });
 }
 
 export function stopSpeech() {

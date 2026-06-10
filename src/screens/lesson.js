@@ -17,6 +17,8 @@ import { renderMatch } from '../exercises/match.js';
 import { renderFillBlank } from '../exercises/fillBlank.js';
 import { renderListen } from '../exercises/listen.js';
 import { renderSpeak } from '../exercises/speak.js';
+import { renderWordBank } from '../exercises/wordBank.js';
+import { renderPicturePick } from '../exercises/picturePick.js';
 
 let currentExerciseIndex = 0;
 let correctCount = 0;
@@ -69,6 +71,8 @@ function renderLessonUI(navigate) {
     case 'fillBlank': exerciseHTML = renderFillBlank(exercise); break;
     case 'listen': exerciseHTML = renderListen(exercise); break;
     case 'speak': exerciseHTML = renderSpeak(exercise); break;
+    case 'wordBank': exerciseHTML = renderWordBank(exercise); break;
+    case 'picturePick': exerciseHTML = renderPicturePick(exercise); break;
     default: exerciseHTML = `<p>Tip necunoscut: ${exercise.type}</p>`;
   }
   
@@ -146,7 +150,97 @@ function attachExerciseEvents(exercise, navigate, params) {
     case 'speak':
       attachSpeakEvents(exercise, navigate, params);
       break;
+    case 'wordBank':
+      attachWordBankEvents(exercise, navigate, params);
+      break;
+    case 'picturePick':
+      attachPicturePickEvents(exercise, navigate, params);
+      break;
   }
+}
+
+function attachWordBankEvents(exercise, navigate, params) {
+  const answerRow = document.getElementById('wb-answer');
+  const bank = document.getElementById('wb-bank');
+  const checkBtn = document.getElementById('btn-wb-check');
+  const clearBtn = document.getElementById('btn-wb-clear');
+  const placeholder = answerRow?.querySelector('.wb-placeholder');
+
+  // Speaker — speak the German prompt
+  document.getElementById('btn-wb-speak')?.addEventListener('click', () => speak(exercise.promptDe));
+  setTimeout(() => speak(exercise.promptDe), 400);
+
+  // Track the selected chips in order
+  const selected = [];
+
+  const refreshState = () => {
+    if (placeholder) placeholder.style.display = selected.length === 0 ? '' : 'none';
+    if (checkBtn) checkBtn.disabled = selected.length === 0;
+  };
+
+  const addChip = (token, tileEl) => {
+    if (exerciseLocked) return;
+    selected.push({ token, tileEl });
+    tileEl.classList.add('wb-used');
+
+    const chip = document.createElement('button');
+    chip.className = 'wb-chip animate-fadeInUp';
+    chip.textContent = token;
+    chip.addEventListener('click', () => removeChip(chip, tileEl));
+    answerRow.appendChild(chip);
+    refreshState();
+  };
+
+  const removeChip = (chip, tileEl) => {
+    if (exerciseLocked) return;
+    const idx = selected.findIndex(s => s.tileEl === tileEl);
+    if (idx >= 0) selected.splice(idx, 1);
+    chip.remove();
+    tileEl.classList.remove('wb-used');
+    refreshState();
+  };
+
+  bank?.querySelectorAll('.wb-tile').forEach(tile => {
+    tile.addEventListener('click', () => addChip(tile.dataset.token, tile));
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    if (exerciseLocked) return;
+    selected.splice(0).forEach(s => s.tileEl.classList.remove('wb-used'));
+    answerRow.querySelectorAll('.wb-chip').forEach(c => c.remove());
+    refreshState();
+  });
+
+  checkBtn?.addEventListener('click', () => {
+    if (exerciseLocked || selected.length === 0) return;
+    const built = selected.map(s => s.token).join(' ');
+    const userAnswer = normalizeAnswer(built);
+    const correctAnswer = normalizeAnswer(exercise.answer);
+    if (userAnswer === correctAnswer) {
+      handleAnswer(true, exercise.answer, navigate, params);
+    } else {
+      handleWrongAttempt(exercise, exercise.answer, navigate, params);
+    }
+  });
+}
+
+function attachPicturePickEvents(exercise, navigate, params) {
+  document.getElementById('btn-pp-speak')?.addEventListener('click', () => speak(exercise.wordDe));
+  setTimeout(() => speak(exercise.wordDe), 400);
+
+  document.querySelectorAll('.pp-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (exerciseLocked) return;
+      const selected = card.dataset.value;
+      const isCorrect = selected === exercise.correct;
+      document.querySelectorAll('.pp-card').forEach(c => {
+        c.classList.add('pp-disabled');
+        if (c.dataset.value === exercise.correct) c.classList.add('pp-correct');
+        if (c.dataset.value === selected && !isCorrect) c.classList.add('pp-wrong');
+      });
+      handleAnswer(isCorrect, exercise.correct, navigate, params);
+    });
+  });
 }
 
 function attachMultiChoiceEvents(exercise, navigate, params) {

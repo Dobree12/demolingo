@@ -39,6 +39,7 @@ export const lessons = [
       { type: 'speak', word: 'Guten Tag', translation: 'Bună ziua' },
       { type: 'translate_ro_de', prompt: 'Mulțumesc', answer: 'Danke' },
       { type: 'listen', word: 'Auf Wiedersehen', answer: 'Auf Wiedersehen' },
+      { type: 'wordBank', promptDe: 'Guten Morgen!', answer: 'Bună dimineața', bank: ['Bună', 'dimineața', 'ziua', 'seara', 'noapte'] },
       { type: 'multiChoice', question: 'Ce înseamnă "Nein"?', correct: 'Nu', options: ['Da', 'Nu', 'Te rog', 'Scuze'] },
     ],
   },
@@ -80,6 +81,7 @@ export const lessons = [
       { type: 'fillBlank', sentence: '_____ mich, dich kennenzulernen!', answer: 'Freut', hint: 'Îmi pare bine de cunoștință' },
       { type: 'translate_ro_de', prompt: 'Eu sunt din România', answer: 'Ich komme aus Rumänien' },
       { type: 'listen', word: 'Freut mich', answer: 'Freut mich' },
+      { type: 'wordBank', promptDe: 'Ich heiße Anna.', answer: 'Mă numesc Anna', bank: ['Mă', 'numesc', 'Anna', 'sunt', 'eu', 'din'] },
     ],
   },
 
@@ -195,6 +197,9 @@ export const lessons = [
       { type: 'fillBlank', sentence: 'Was möchtest du _____?', answer: 'essen', hint: 'Ce vrei să mănânci?' },
       { type: 'multiChoice', question: 'Ce înseamnă "die Milch"?', correct: 'laptele', options: ['apa', 'laptele', 'cafeaua', 'ceaiul'] },
       { type: 'translate_ro_de', prompt: 'brânza', answer: 'der Käse' },
+      { type: 'picturePick', wordDe: 'Milch', correct: 'Milch', options: ['Milch', 'Tee', 'Kaffee'] },
+      { type: 'picturePick', wordDe: 'Apfel', correct: 'Apfel', options: ['Apfel', 'Brot', 'Käse'] },
+      { type: 'wordBank', promptDe: 'Ich trinke Wasser.', answer: 'Eu beau apă', bank: ['Eu', 'beau', 'apă', 'mănânc', 'cafea', 'lapte'] },
     ],
   },
 
@@ -233,6 +238,8 @@ export const lessons = [
       { type: 'multiChoice', question: 'Ce înseamnă "gelb"?', correct: 'galben', options: ['verde', 'galben', 'roșu', 'albastru'] },
       { type: 'translate_ro_de', prompt: 'albastru', answer: 'blau' },
       { type: 'listen', word: 'schwarz', answer: 'schwarz' },
+      { type: 'picturePick', wordDe: 'rot', correct: 'rot', options: ['rot', 'blau', 'grün'] },
+      { type: 'picturePick', wordDe: 'gelb', correct: 'gelb', options: ['gelb', 'schwarz', 'weiß'] },
     ],
   },
 
@@ -271,6 +278,8 @@ export const lessons = [
       { type: 'multiChoice', question: 'Ce înseamnă "die Maus"?', correct: 'șoarecele', options: ['calul', 'ursul', 'șoarecele', 'porcul'] },
       { type: 'translate_ro_de', prompt: 'ursul', answer: 'der Bär' },
       { type: 'listen', word: 'der Fuchs', answer: 'der Fuchs' },
+      { type: 'picturePick', wordDe: 'Hund', correct: 'Hund', options: ['Hund', 'Katze', 'Vogel'] },
+      { type: 'picturePick', wordDe: 'Pferd', correct: 'Pferd', options: ['Pferd', 'Kuh', 'Schwein'] },
     ],
   },
 ];

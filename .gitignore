@@ -14,6 +14,8 @@ dist-ssr
 
 # Screenshots / local notes
 image.png
+beverage.png
+new_exercise.png
 *.screenshot.png
 convo.txt
 conversatie.txt
