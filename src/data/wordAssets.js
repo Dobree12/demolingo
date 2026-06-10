@@ -6,7 +6,7 @@
 
 const RAW_MAP = {
   // Greetings
-  'hallo': '👋', 'tschüss': '👋', 'auf wiedersehen': '🤝',
+  'hallo': '👋', 'tschuss': '👋', 'auf wiedersehen': '🤝',
   'guten morgen': '🌅', 'guten tag': '☀️', 'guten abend': '🌆', 'gute nacht': '🌙',
   'danke': '🙏', 'bitte': '🙏', 'ja': '✅', 'nein': '❌',
   'entschuldigung': '🙇',
@@ -17,7 +17,7 @@ const RAW_MAP = {
   'familie': '👨‍👩‍👧‍👦', 'mutter': '👩', 'vater': '👨', 'bruder': '👦', 'schwester': '👧',
 
   // Numbers 1-20
-  'eins': '1️⃣', 'zwei': '2️⃣', 'drei': '3️⃣', 'vier': '4️⃣', 'fünf': '5️⃣',
+  'eins': '1️⃣', 'zwei': '2️⃣', 'drei': '3️⃣', 'vier': '4️⃣', 'funf': '5️⃣',
   'sechs': '6️⃣', 'sieben': '7️⃣', 'acht': '8️⃣', 'neun': '9️⃣', 'zehn': '🔟',
 
   // Drinks (matches beverage.png style)
@@ -26,7 +26,7 @@ const RAW_MAP = {
   'orangensaft': '🍊', 'apfelsaft': '🍎',
 
   // Food
-  'brot': '🍞', 'käse': '🧀', 'butter': '🧈', 'ei': '🥚', 'eier': '🥚',
+  'brot': '🍞', 'kase': '🧀', 'butter': '🧈', 'ei': '🥚', 'eier': '🥚',
   'fleisch': '🥩', 'fisch': '🐟', 'huhn': '🍗', 'wurst': '🌭',
   'apfel': '🍎', 'banane': '🍌', 'orange': '🍊', 'erdbeere': '🍓',
   'kartoffel': '🥔', 'tomate': '🍅', 'salat': '🥗', 'suppe': '🍲',
@@ -36,11 +36,11 @@ const RAW_MAP = {
   // Animals
   'hund': '🐕', 'katze': '🐈', 'vogel': '🐦', 'fisch ': '🐠',
   'pferd': '🐎', 'kuh': '🐄', 'schwein': '🐖', 'schaf': '🐑',
-  'maus': '🐁', 'bär': '🐻', 'löwe': '🦁', 'elefant': '🐘',
+  'maus': '🐁', 'bar': '🐻', 'lowe': '🦁', 'elefant': '🐘',
 
   // Colors
-  'rot': '🟥', 'blau': '🟦', 'grün': '🟩', 'gelb': '🟨',
-  'schwarz': '⬛', 'weiß': '⬜', 'orange ': '🟧', 'lila': '🟪',
+  'rot': '🟥', 'blau': '🟦', 'grun': '🟩', 'gelb': '🟨',
+  'schwarz': '⬛', 'weiss': '⬜', 'orange ': '🟧', 'lila': '🟪',
   'braun': '🟫', 'rosa': '💗', 'grau': '🩶',
 
   // Time & days
@@ -54,8 +54,8 @@ const RAW_MAP = {
   'baum': '🌳', 'blume': '🌸', 'gras': '🌱', 'meer': '🌊', 'berg': '🏔️',
 
   // Places
-  'haus': '🏠', 'schule': '🏫', 'universität': '🎓', 'arbeit': '💼',
-  'büro': '🏢', 'krankenhaus': '🏥', 'restaurant': '🍽️', 'café': '☕',
+  'haus': '🏠', 'schule': '🏫', 'universitat': '🎓', 'arbeit': '💼',
+  'buro': '🏢', 'krankenhaus': '🏥', 'restaurant': '🍽️', 'café': '☕',
   'bahnhof': '🚉', 'flughafen': '✈️', 'stadt': '🏙️', 'land': '🏞️',
   'park': '🌳', 'kino': '🎬', 'museum': '🏛️', 'kirche': '⛪',
 
@@ -66,32 +66,37 @@ const RAW_MAP = {
   // Verbs & actions
   'essen': '🍽️', 'trinken': '🥤', 'schlafen': '😴', 'arbeiten': '💼',
   'lernen': '📚', 'lesen': '📖', 'schreiben': '✍️', 'sprechen': '🗣️',
-  'hören': '👂', 'sehen': '👀', 'gehen': '🚶', 'laufen': '🏃',
+  'horen': '👂', 'sehen': '👀', 'gehen': '🚶', 'laufen': '🏃',
   'kommen': '🚶‍♂️', 'fahren': '🚗', 'kaufen': '🛒', 'spielen': '⚽',
 
   // Adjectives
-  'gut': '👍', 'schlecht': '👎', 'groß': '⬆️', 'klein': '⬇️',
-  'schön': '✨', 'hässlich': '😬', 'alt': '👴', 'jung': '👶',
-  'neu': '🆕', 'heiß': '🔥', 'kalt': '🧊', 'warm': '☀️',
-  'müde': '😴', 'glücklich': '😄', 'traurig': '😢',
+  'gut': '👍', 'schlecht': '👎', 'gross': '⬆️', 'klein': '⬇️',
+  'schon': '✨', 'hasslich': '😬', 'alt': '👴', 'jung': '👶',
+  'neu': '🆕', 'heiss': '🔥', 'kalt': '🧊', 'warm': '☀️',
+  'mude': '😴', 'glucklich': '😄', 'traurig': '😢',
 
   // Countries (relevant ones)
-  'rumänien': '🇷🇴', 'deutschland': '🇩🇪', 'österreich': '🇦🇹',
+  'rumanien': '🇷🇴', 'deutschland': '🇩🇪', 'osterreich': '🇦🇹',
   'schweiz': '🇨🇭', 'frankreich': '🇫🇷', 'italien': '🇮🇹', 'spanien': '🇪🇸',
   'england': '🇬🇧', 'usa': '🇺🇸',
 
   // Body
   'kopf': '🗣️', 'auge': '👁️', 'ohr': '👂', 'nase': '👃',
-  'mund': '👄', 'hand': '✋', 'fuß': '🦶', 'herz': '❤️',
+  'mund': '👄', 'hand': '✋', 'fuss': '🦶', 'herz': '❤️',
 
   // Phrases / fillers
-  'freut mich': '😊', 'wie heißt du': '❓', 'wie geht es dir': '🤔',
-  'ich heiße': '👋', 'ich komme aus': '🌍',
+  'freut mich': '😊', 'wie heisst du': '❓', 'wie geht es dir': '🤔',
+  'ich heisse': '👋', 'ich komme aus': '🌍',
 };
 
+// Lookup keys are stored in ASCII form. Still strip any German umlauts the
+// caller might pass in so existing data outside this file keeps working.
 const normalize = (s) => (s || '')
   .toLowerCase()
-  .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss')
+  .replace(/ä/g, 'a')
+  .replace(/ö/g, 'o')
+  .replace(/ü/g, 'u')
+  .replace(/ß/g, 'ss')
   .trim();
 
 const LOOKUP = (() => {

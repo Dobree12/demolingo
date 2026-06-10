@@ -17,7 +17,7 @@ export const cognates = [
   { ro: 'restaurant', de: 'Restaurant', meaning: 'restaurant', category: 'mâncare' },
   { ro: 'parc', de: 'Park', meaning: 'park', category: 'locuri' },
   { ro: 'familie', de: 'Familie', meaning: 'family', category: 'oameni' },
-  { ro: 'universitate', de: 'Universität', meaning: 'university', category: 'educație' },
+  { ro: 'universitate', de: 'Universitat', meaning: 'university', category: 'educație' },
   { ro: 'profesor', de: 'Professor', meaning: 'professor', category: 'educație' },
   { ro: 'student', de: 'Student', meaning: 'student', category: 'educație' },
   { ro: 'natură', de: 'Natur', meaning: 'nature', category: 'natură' },

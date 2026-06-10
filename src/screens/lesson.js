@@ -603,22 +603,16 @@ function showRetryFeedback(exercise, correctAnswer, attempt, navigate, params) {
   const isFinal = attempt >= MAX_ATTEMPTS;
   const hint = buildHint(correctAnswer, attempt);
   const mascotState = isFinal ? 'thinking' : 'encouraging';
-  const hasSpecial = /[äöüß]/i.test(correctAnswer);
-  const specialNote = hasSpecial
-    ? `<p class="feedback-hint-note">💡 Poți scrie <strong>ä ö ü ß</strong> ca <strong>a o u ss</strong></p>`
-    : '';
 
   let bodyHTML = '';
   if (isFinal) {
     bodyHTML = `
       <p class="feedback-answer">Răspunsul corect: <strong>${correctAnswer}</strong></p>
       <p class="feedback-text">Scrie-l ca să continui.</p>
-      ${specialNote}
     `;
   } else if (attempt >= 2) {
     bodyHTML = `
       <p class="feedback-text">Indiciu: <span class="hint-letters">${hint}</span></p>
-      ${specialNote}
     `;
   } else {
     bodyHTML = `<p class="feedback-text">Aproape! Mai încearcă o dată.</p>`;
@@ -668,23 +662,15 @@ function showPersistentHint(hint, attempt, fullAnswer) {
     exerciseArea.insertBefore(hintBox, exerciseArea.firstChild);
   }
 
-  const target = fullAnswer || hint;
-  const hasSpecial = /[äöüß]/i.test(target);
-  const noteHTML = hasSpecial
-    ? `<span class="hint-note">(ä ö ü ß = a o u ss)</span>`
-    : '';
-
   if (fullAnswer) {
     hintBox.innerHTML = `
       <span class="hint-label">💡 Răspuns:</span>
       <span class="hint-text"><strong>${fullAnswer}</strong></span>
-      ${noteHTML}
     `;
   } else {
     hintBox.innerHTML = `
       <span class="hint-label">💡 Indiciu (${attempt}/${MAX_ATTEMPTS}):</span>
       <span class="hint-text">${hint}</span>
-      ${noteHTML}
     `;
   }
 }
