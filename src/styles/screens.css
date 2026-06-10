@@ -478,6 +478,23 @@
   color: var(--text-primary);
 }
 
+.hint-note {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: auto;
+}
+
+.feedback-hint-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  background: rgba(255, 193, 7, 0.12);
+  border-radius: var(--border-radius-sm);
+  padding: 6px 10px;
+  margin-top: var(--space-xs);
+  display: inline-block;
+}
+
 /* Hearts Gone Screen */
 .hearts-gone-screen {
   min-height: 100vh;

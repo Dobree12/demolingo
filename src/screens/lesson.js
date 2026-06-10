@@ -195,9 +195,9 @@ function checkTranslation(exercise, navigate, params) {
   const input = document.getElementById('translate-input');
   if (!input) return;
 
-  const userAnswer = input.value.trim().toLowerCase();
-  const correctAnswer = exercise.answer.toLowerCase();
-  const alts = (exercise.alts || []).map(a => a.toLowerCase());
+  const userAnswer = normalizeAnswer(input.value);
+  const correctAnswer = normalizeAnswer(exercise.answer);
+  const alts = (exercise.alts || []).map(normalizeAnswer);
 
   const isCorrect = userAnswer === correctAnswer || alts.includes(userAnswer);
 
@@ -230,8 +230,8 @@ function checkFillBlank(exercise, navigate, params) {
   const input = document.getElementById('fillblank-input');
   if (!input) return;
 
-  const userAnswer = input.value.trim().toLowerCase();
-  const correctAnswer = exercise.answer.toLowerCase();
+  const userAnswer = normalizeAnswer(input.value);
+  const correctAnswer = normalizeAnswer(exercise.answer);
   const isCorrect = userAnswer === correctAnswer;
 
   if (isCorrect) {
@@ -282,12 +282,15 @@ function attachMatchEvents(exercise, navigate, params) {
             setTimeout(() => handleAnswer(true, '', navigate, params), 500);
           }
         } else {
-          selectedLeft.el.classList.add('match-wrong-anim');
-          selectedRight.el.classList.add('match-wrong-anim');
+          const leftEl = selectedLeft.el;
+          const rightEl = selectedRight.el;
+          leftEl.classList.add('match-wrong-anim');
+          rightEl.classList.add('match-wrong-anim');
+          playSound('wrong');
           setTimeout(() => {
-            selectedLeft.el.classList.remove('match-selected', 'match-wrong-anim');
-            selectedRight.el.classList.remove('match-selected', 'match-wrong-anim');
-          }, 600);
+            leftEl.classList.remove('match-selected', 'match-wrong-anim');
+            rightEl.classList.remove('match-selected', 'match-wrong-anim');
+          }, 1200);
         }
         
         selectedLeft = null;
@@ -327,11 +330,9 @@ function checkListenAnswer(exercise, navigate, params) {
   const input = document.getElementById('listen-input');
   if (!input) return;
 
-  const userAnswer = input.value.trim().toLowerCase();
-  const correctAnswer = exercise.answer.toLowerCase();
-  // Be lenient — remove punctuation and extra spaces
-  const normalize = s => s.replace(/[?.!,]/g, '').replace(/\s+/g, ' ').trim();
-  const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
+  const userAnswer = normalizeAnswer(input.value);
+  const correctAnswer = normalizeAnswer(exercise.answer);
+  const isCorrect = userAnswer === correctAnswer;
 
   if (isCorrect) {
     input.classList.add('input-success');
@@ -415,33 +416,53 @@ function attachSpeakEvents(exercise, navigate, params) {
 // Retry / hint mechanism for text-input exercises
 // ============================================
 
+// Normalize input so users on US keyboards don't need umlauts/ß
+function normalizeAnswer(s) {
+  return s
+    .toLowerCase()
+    .replace(/ä/g, 'a')
+    .replace(/ö/g, 'o')
+    .replace(/ü/g, 'u')
+    .replace(/ß/g, 'ss')
+    .replace(/[.,!?;:]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function buildHint(answer, level) {
   if (level >= MAX_ATTEMPTS) return answer;
   if (level <= 1) return '';
 
-  const chars = answer.split('');
-  const letterRegex = /[a-zA-ZăâîșțĂÂÎȘȚäöüÄÖÜß]/;
-  const letterPositions = [];
-  chars.forEach((c, i) => { if (letterRegex.test(c)) letterPositions.push(i); });
-  const n = letterPositions.length;
+  const len = answer.length;
+  const firstSpace = answer.indexOf(' ');
+  const hasMultipleWords = firstSpace > 0 && firstSpace < len - 1;
 
-  const reveal = new Set();
-  // Spaces, punctuation, digits are always visible
-  chars.forEach((c, i) => { if (!letterRegex.test(c)) reveal.add(i); });
-
-  if (level === 2 && n >= 1) {
-    reveal.add(letterPositions[0]);
-  }
-  if (level === 3) {
-    if (n >= 1) reveal.add(letterPositions[0]);
-    if (n >= 2) reveal.add(letterPositions[n - 1]);
-  }
-  if (level === 4) {
-    // Reveal every other letter, starting from first
-    for (let i = 0; i < n; i += 2) reveal.add(letterPositions[i]);
+  let revealLen;
+  if (level === 2) {
+    // Reveal first whole word if multi-word, else ~40% of the word
+    revealLen = hasMultipleWords ? firstSpace : Math.ceil(len * 0.4);
+  } else if (level === 3) {
+    // Reveal ~65%
+    revealLen = Math.ceil(len * 0.65);
+  } else {
+    // level 4: reveal almost everything (all but last 1-2 chars)
+    revealLen = Math.max(1, len - (len > 6 ? 2 : 1));
   }
 
-  return chars.map((c, i) => reveal.has(i) ? c : '_').join('');
+  // Always keep at least one hidden character so the hint has tension
+  revealLen = Math.min(revealLen, len - 1);
+  revealLen = Math.max(0, revealLen);
+
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    const c = answer[i];
+    if (i < revealLen || c === ' ' || c === '-' || c === "'") {
+      result += c;
+    } else {
+      result += '_';
+    }
+  }
+  return result;
 }
 
 function updateHeartsDisplay() {
@@ -488,16 +509,22 @@ function showRetryFeedback(exercise, correctAnswer, attempt, navigate, params) {
   const isFinal = attempt >= MAX_ATTEMPTS;
   const hint = buildHint(correctAnswer, attempt);
   const mascotState = isFinal ? 'thinking' : 'encouraging';
+  const hasSpecial = /[äöüß]/i.test(correctAnswer);
+  const specialNote = hasSpecial
+    ? `<p class="feedback-hint-note">💡 Poți scrie <strong>ä ö ü ß</strong> ca <strong>a o u ss</strong></p>`
+    : '';
 
   let bodyHTML = '';
   if (isFinal) {
     bodyHTML = `
       <p class="feedback-answer">Răspunsul corect: <strong>${correctAnswer}</strong></p>
-      <p class="feedback-text">Scrie-l exact ca să continui.</p>
+      <p class="feedback-text">Scrie-l ca să continui.</p>
+      ${specialNote}
     `;
   } else if (attempt >= 2) {
     bodyHTML = `
       <p class="feedback-text">Indiciu: <span class="hint-letters">${hint}</span></p>
+      ${specialNote}
     `;
   } else {
     bodyHTML = `<p class="feedback-text">Aproape! Mai încearcă o dată.</p>`;
@@ -547,15 +574,23 @@ function showPersistentHint(hint, attempt, fullAnswer) {
     exerciseArea.insertBefore(hintBox, exerciseArea.firstChild);
   }
 
+  const target = fullAnswer || hint;
+  const hasSpecial = /[äöüß]/i.test(target);
+  const noteHTML = hasSpecial
+    ? `<span class="hint-note">(ä ö ü ß = a o u ss)</span>`
+    : '';
+
   if (fullAnswer) {
     hintBox.innerHTML = `
       <span class="hint-label">💡 Răspuns:</span>
       <span class="hint-text"><strong>${fullAnswer}</strong></span>
+      ${noteHTML}
     `;
   } else {
     hintBox.innerHTML = `
       <span class="hint-label">💡 Indiciu (${attempt}/${MAX_ATTEMPTS}):</span>
       <span class="hint-text">${hint}</span>
+      ${noteHTML}
     `;
   }
 }
