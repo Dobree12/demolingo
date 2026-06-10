@@ -26,6 +26,8 @@ let lessonData = null;
 let hearts = 5;
 let exerciseLocked = false;
 let sessionStartTime = null;
+let currentAttempt = 0; // wrong attempts for current exercise (0 = none yet)
+const MAX_ATTEMPTS = 5;
 
 export function renderLesson(navigate, params) {
   const lesson = getLessonById(params.lessonId);
@@ -40,6 +42,7 @@ export function renderLesson(navigate, params) {
   wrongCount = 0;
   consecutiveCorrect = 0;
   exerciseLocked = false;
+  currentAttempt = 0;
   hearts = startLessonHearts();
   sessionStartTime = Date.now();
   
@@ -191,15 +194,20 @@ function attachTranslateEvents(exercise, navigate, params) {
 function checkTranslation(exercise, navigate, params) {
   const input = document.getElementById('translate-input');
   if (!input) return;
-  
+
   const userAnswer = input.value.trim().toLowerCase();
   const correctAnswer = exercise.answer.toLowerCase();
   const alts = (exercise.alts || []).map(a => a.toLowerCase());
-  
+
   const isCorrect = userAnswer === correctAnswer || alts.includes(userAnswer);
-  
-  input.classList.add(isCorrect ? 'input-success' : 'input-error');
-  handleAnswer(isCorrect, exercise.answer, navigate, params);
+
+  if (isCorrect) {
+    input.classList.add('input-success');
+    handleAnswer(true, exercise.answer, navigate, params);
+  } else {
+    input.classList.add('input-error');
+    handleWrongAttempt(exercise, exercise.answer, navigate, params);
+  }
 }
 
 function attachFillBlankEvents(exercise, navigate, params) {
@@ -221,13 +229,18 @@ function attachFillBlankEvents(exercise, navigate, params) {
 function checkFillBlank(exercise, navigate, params) {
   const input = document.getElementById('fillblank-input');
   if (!input) return;
-  
+
   const userAnswer = input.value.trim().toLowerCase();
   const correctAnswer = exercise.answer.toLowerCase();
   const isCorrect = userAnswer === correctAnswer;
-  
-  input.classList.add(isCorrect ? 'input-success' : 'input-error');
-  handleAnswer(isCorrect, exercise.answer, navigate, params);
+
+  if (isCorrect) {
+    input.classList.add('input-success');
+    handleAnswer(true, exercise.answer, navigate, params);
+  } else {
+    input.classList.add('input-error');
+    handleWrongAttempt(exercise, exercise.answer, navigate, params);
+  }
 }
 
 function attachMatchEvents(exercise, navigate, params) {
@@ -313,15 +326,20 @@ function attachListenEvents(exercise, navigate, params) {
 function checkListenAnswer(exercise, navigate, params) {
   const input = document.getElementById('listen-input');
   if (!input) return;
-  
+
   const userAnswer = input.value.trim().toLowerCase();
   const correctAnswer = exercise.answer.toLowerCase();
   // Be lenient — remove punctuation and extra spaces
   const normalize = s => s.replace(/[?.!,]/g, '').replace(/\s+/g, ' ').trim();
   const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
-  
-  input.classList.add(isCorrect ? 'input-success' : 'input-error');
-  handleAnswer(isCorrect, exercise.answer, navigate, params);
+
+  if (isCorrect) {
+    input.classList.add('input-success');
+    handleAnswer(true, exercise.answer, navigate, params);
+  } else {
+    input.classList.add('input-error');
+    handleWrongAttempt(exercise, exercise.answer, navigate, params);
+  }
 }
 
 function attachSpeakEvents(exercise, navigate, params) {
@@ -393,18 +411,168 @@ function attachSpeakEvents(exercise, navigate, params) {
   });
 }
 
+// ============================================
+// Retry / hint mechanism for text-input exercises
+// ============================================
+
+function buildHint(answer, level) {
+  if (level >= MAX_ATTEMPTS) return answer;
+  if (level <= 1) return '';
+
+  const chars = answer.split('');
+  const letterRegex = /[a-zA-ZăâîșțĂÂÎȘȚäöüÄÖÜß]/;
+  const letterPositions = [];
+  chars.forEach((c, i) => { if (letterRegex.test(c)) letterPositions.push(i); });
+  const n = letterPositions.length;
+
+  const reveal = new Set();
+  // Spaces, punctuation, digits are always visible
+  chars.forEach((c, i) => { if (!letterRegex.test(c)) reveal.add(i); });
+
+  if (level === 2 && n >= 1) {
+    reveal.add(letterPositions[0]);
+  }
+  if (level === 3) {
+    if (n >= 1) reveal.add(letterPositions[0]);
+    if (n >= 2) reveal.add(letterPositions[n - 1]);
+  }
+  if (level === 4) {
+    // Reveal every other letter, starting from first
+    for (let i = 0; i < n; i += 2) reveal.add(letterPositions[i]);
+  }
+
+  return chars.map((c, i) => reveal.has(i) ? c : '_').join('');
+}
+
+function updateHeartsDisplay() {
+  const container = document.querySelector('.lesson-hearts');
+  if (!container) return;
+  container.innerHTML = Array.from({ length: 5 }, (_, i) =>
+    `<span class="heart-icon ${i < hearts ? 'heart-active' : 'heart-empty'}">${i < hearts ? '❤️' : '🤍'}</span>`
+  ).join('');
+}
+
+function handleWrongAttempt(exercise, correctAnswer, navigate, params) {
+  exerciseLocked = true;
+  const isFirstFail = currentAttempt === 0;
+  currentAttempt = Math.min(currentAttempt + 1, MAX_ATTEMPTS);
+
+  if (isFirstFail) {
+    wrongCount++;
+    consecutiveCorrect = 0;
+    hearts = loseHeart();
+    addMistake({
+      exercise,
+      lessonId: params.lessonId,
+      timestamp: new Date().toISOString(),
+    });
+    const word = exercise.word || exercise.prompt || exercise.correct;
+    if (word) updateWordSRS(word, 1);
+    updateHeartsDisplay();
+  }
+
+  playSound('wrong');
+
+  if (hearts <= 0) {
+    showHeartsGone(navigate, params);
+    return;
+  }
+
+  showRetryFeedback(exercise, correctAnswer, currentAttempt, navigate, params);
+}
+
+function showRetryFeedback(exercise, correctAnswer, attempt, navigate, params) {
+  const feedbackArea = document.getElementById('feedback-area');
+  if (!feedbackArea) return;
+
+  const isFinal = attempt >= MAX_ATTEMPTS;
+  const hint = buildHint(correctAnswer, attempt);
+  const mascotState = isFinal ? 'thinking' : 'encouraging';
+
+  let bodyHTML = '';
+  if (isFinal) {
+    bodyHTML = `
+      <p class="feedback-answer">Răspunsul corect: <strong>${correctAnswer}</strong></p>
+      <p class="feedback-text">Scrie-l exact ca să continui.</p>
+    `;
+  } else if (attempt >= 2) {
+    bodyHTML = `
+      <p class="feedback-text">Indiciu: <span class="hint-letters">${hint}</span></p>
+    `;
+  } else {
+    bodyHTML = `<p class="feedback-text">Aproape! Mai încearcă o dată.</p>`;
+  }
+
+  feedbackArea.innerHTML = `
+    <div class="feedback-bar feedback-bar-wrong feedback-wrong">
+      <div class="feedback-content">
+        <div class="feedback-mascot">${renderMascot(mascotState, 'sm')}</div>
+        <div class="feedback-info">
+          <p class="feedback-title">Încercare ${attempt}/${MAX_ATTEMPTS}</p>
+          ${bodyHTML}
+        </div>
+      </div>
+      <button class="btn btn-danger btn-full" id="btn-try-again">ÎNCEARCĂ DIN NOU</button>
+    </div>
+  `;
+
+  feedbackArea.classList.remove('hidden');
+
+  document.getElementById('btn-try-again')?.addEventListener('click', () => {
+    feedbackArea.classList.add('hidden');
+    exerciseLocked = false;
+
+    const input = document.querySelector('#translate-input, #fillblank-input, #listen-input');
+    if (input) {
+      input.value = '';
+      input.classList.remove('input-error');
+      input.focus();
+    }
+
+    if (attempt >= 2) {
+      showPersistentHint(hint, attempt, isFinal ? correctAnswer : null);
+    }
+  });
+}
+
+function showPersistentHint(hint, attempt, fullAnswer) {
+  const exerciseArea = document.getElementById('exercise-area');
+  if (!exerciseArea) return;
+
+  let hintBox = document.getElementById('hint-box');
+  if (!hintBox) {
+    hintBox = document.createElement('div');
+    hintBox.id = 'hint-box';
+    hintBox.className = 'hint-box animate-fadeInDown';
+    exerciseArea.insertBefore(hintBox, exerciseArea.firstChild);
+  }
+
+  if (fullAnswer) {
+    hintBox.innerHTML = `
+      <span class="hint-label">💡 Răspuns:</span>
+      <span class="hint-text"><strong>${fullAnswer}</strong></span>
+    `;
+  } else {
+    hintBox.innerHTML = `
+      <span class="hint-label">💡 Indiciu (${attempt}/${MAX_ATTEMPTS}):</span>
+      <span class="hint-text">${hint}</span>
+    `;
+  }
+}
+
 function handleAnswer(isCorrect, correctAnswer, navigate, params) {
   exerciseLocked = true;
   const exercise = lessonData.exercises[currentExerciseIndex];
-  
+
   if (isCorrect) {
     correctCount++;
-    consecutiveCorrect++;
+    if (currentAttempt === 0) consecutiveCorrect++;
+    else consecutiveCorrect = 0;
     recordCorrect();
-    
-    // Add XP (variable — psychology technique #2)
-    const baseXP = 10;
-    const streakBonus = consecutiveCorrect >= 3 ? 5 : 0;
+
+    // XP scales down with retries: 0→10, 1→8, 2→6, 3→4, 4→2, 5→1
+    const baseXP = currentAttempt === 0 ? 10 : Math.max(1, 10 - currentAttempt * 2);
+    const streakBonus = currentAttempt === 0 && consecutiveCorrect >= 3 ? 5 : 0;
     const xpGained = baseXP + streakBonus;
     addXP(xpGained);
     
@@ -490,6 +658,7 @@ function showFeedback(isCorrect, message, correctAnswer, navigate, params) {
     
     // Next exercise or finish
     currentExerciseIndex++;
+    currentAttempt = 0;
     if (currentExerciseIndex >= lessonData.exercises.length) {
       finishLesson(navigate, params);
     } else {

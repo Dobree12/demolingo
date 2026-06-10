@@ -573,19 +573,7 @@ input {
   animation: confettiFall linear forwards;
 }
 
-/* --- Bottom feedback bar --- */
-.feedback-bar {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: var(--max-width);
-  width: 100%;
-  padding: var(--space-lg);
-  animation: slideUp 0.3s ease forwards;
-  z-index: 100;
-}
-
+/* --- Bottom feedback bar (positioning lives in screens.css via .feedback-area) --- */
 .feedback-bar-correct {
   background: var(--color-success-bg);
   border-top: 3px solid var(--color-success);

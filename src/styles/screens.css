@@ -450,6 +450,34 @@
   margin-top: var(--space-xs);
 }
 
+/* Hint box (retry-with-hint mechanism) */
+.hint-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: #fff8e1;
+  border: 2px dashed #ffc107;
+  border-radius: var(--border-radius-lg);
+  margin-bottom: var(--space-lg);
+  font-size: var(--font-size-md);
+}
+
+.hint-label {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.hint-text,
+.hint-letters {
+  font-family: 'Courier New', ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+}
+
 /* Hearts Gone Screen */
 .hearts-gone-screen {
   min-height: 100vh;
