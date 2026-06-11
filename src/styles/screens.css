@@ -287,6 +287,99 @@
   margin: var(--space-md) var(--space-lg) 0;
 }
 
+/* Profil activ (chip în header) */
+.home-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: var(--border-radius-full);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: background var(--transition-fast);
+}
+
+.home-user-chip:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.home-user-chip-avatar {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.home-user-chip-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Carduri de secțiuni pe home */
+.home-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin: 0 var(--space-lg);
+}
+
+.home-section-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-button-secondary);
+  cursor: pointer;
+  font-family: var(--font-family);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.home-section-card:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.home-section-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.home-section-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.home-section-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.home-section-desc {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.home-section-progress {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
 
 /* ==============================
    LESSON SCREEN
@@ -330,26 +423,6 @@
   background: var(--color-error-bg);
   border-color: var(--color-error);
   color: var(--color-error);
-}
-
-.lesson-hearts {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.heart-icon {
-  font-size: 18px;
-  transition: transform var(--transition-fast);
-}
-
-.heart-active {
-  animation: popIn 0.3s ease;
-}
-
-.heart-empty {
-  opacity: 0.3;
-  filter: grayscale(1);
 }
 
 .lesson-title-bar {
@@ -494,21 +567,6 @@
   margin-top: var(--space-xs);
   display: inline-block;
 }
-
-/* Hearts Gone Screen */
-.hearts-gone-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-xl);
-}
-
-.hearts-gone-content {
-  text-align: center;
-  max-width: 400px;
-}
-
 
 /* ==============================
    EXERCISE STYLES
@@ -1289,7 +1347,8 @@
   }
 
   .home-cognates-card,
-  .home-review-card {
+  .home-review-card,
+  .home-sections {
     margin-left: var(--space-2xl);
     margin-right: var(--space-2xl);
   }
@@ -1340,7 +1399,8 @@
   .home-level-card,
   .home-review-card,
   .home-cognates-card,
-  .home-lessons-title {
+  .home-lessons-title,
+  .home-sections {
     margin-left: var(--space-3xl);
     margin-right: var(--space-3xl);
   }

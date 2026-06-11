@@ -2,19 +2,26 @@
 // Multi-Choice Exercise Renderer
 // ============================================
 
+import { getEmojiForWord } from '../data/wordAssets.js';
+
 /**
  * Renders a multiple choice exercise.
  * @param {{ question: string, correct: string, options: string[] }} exercise
  * @returns {string} HTML string
  */
 export function renderMultiChoice(exercise) {
+  // Arată emoji la opțiuni doar dacă TOATE au unul — altfel lipsa unora
+  // ar transforma emoji-ul într-un indiciu pentru răspuns.
+  const emojis = exercise.options.map(o => getEmojiForWord(o));
+  const allHaveEmoji = emojis.every(Boolean);
+
   const optionsHTML = exercise.options
     .map(
       (option, i) => `
       <button class="mc-option card card-interactive animate-fadeInUp"
               data-value="${option}"
               style="animation-delay: ${i * 0.08}s;">
-        <span class="mc-option-letter">${String.fromCharCode(65 + i)}</span>
+        <span class="mc-option-letter">${allHaveEmoji ? emojis[i] : String.fromCharCode(65 + i)}</span>
         <span class="mc-option-text">${option}</span>
       </button>
     `

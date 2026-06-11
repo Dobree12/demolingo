@@ -10,8 +10,8 @@ import { playSound } from '../engine/audio.js';
 
 export function renderResults(navigate, params) {
   const { lessonId, score, stars, correctCount, totalExercises, xpGained, newBadges } = params;
-  const lesson = getLessonById(lessonId);
-  const lessonTitle = lesson ? `${lesson.icon} ${lesson.title}` : 'Lecție';
+  const lesson = lessonId ? getLessonById(lessonId) : null;
+  const lessonTitle = params.title || (lesson ? `${lesson.icon} ${lesson.title}` : 'Lecție');
   const message = getLessonCompleteMessage(score);
 
   // Stars display
@@ -153,8 +153,8 @@ export function attachResultsEvents(navigate, params) {
     navigate('home');
   });
 
-  // Retry button → Restart lesson
+  // Retry button → Restart lesson (sau unitatea de secțiune / quiz-ul generat)
   document.getElementById('btn-results-retry')?.addEventListener('click', () => {
-    navigate('lesson', { lessonId: params.lessonId });
+    navigate('lesson', params.lessonParams || { lessonId: params.lessonId });
   });
 }

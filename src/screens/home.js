@@ -2,9 +2,10 @@
 // Home Screen — Dashboard with lesson map & stats
 // ============================================
 
-import { loadState } from '../engine/storage.js';
+import { loadState, getActiveUser } from '../engine/storage.js';
 import { getStats, getLevelName, getXPProgress, isLessonCompleted, isLessonUnlocked, checkAndUpdateStreak } from '../engine/progress.js';
 import { getAllLessons } from '../data/lessons.js';
+import { getAllSections } from '../data/sections.js';
 import { getRandomMessage, welcomeMessages, comebackMessages, streakMessages } from '../data/messages.js';
 import { renderMascot } from '../components/mascot.js';
 import { getReviewStats } from '../engine/srs.js';
@@ -15,6 +16,7 @@ export function renderHome(navigate) {
   const lessons = getAllLessons();
   const streak = checkAndUpdateStreak();
   const reviewStats = getReviewStats();
+  const activeUser = getActiveUser();
   
   // Determine welcome message
   const today = new Date().toDateString();
@@ -55,6 +57,12 @@ export function renderHome(navigate) {
             <span class="home-logo-text">Învățăm Germană</span>
           </div>
           <div class="home-header-actions">
+            ${activeUser ? `
+              <button class="home-user-chip" id="btn-switch-user" title="Schimbă profilul">
+                <span class="home-user-chip-avatar">${activeUser.avatar}</span>
+                <span class="home-user-chip-name">${activeUser.name}</span>
+              </button>
+            ` : ''}
             <button class="home-icon-btn" id="btn-settings" title="Setări">⚙️</button>
           </div>
         </div>
@@ -70,8 +78,8 @@ export function renderHome(navigate) {
             <span class="home-stat-value">${stats.xp} XP</span>
           </div>
           <div class="home-stat">
-            <span class="home-stat-icon">❤️</span>
-            <span class="home-stat-value">${state.hearts}</span>
+            <span class="home-stat-icon">🎯</span>
+            <span class="home-stat-value">${stats.accuracy}%</span>
           </div>
           <div class="home-stat">
             <span class="home-stat-icon">📚</span>
@@ -161,8 +169,40 @@ export function renderHome(navigate) {
         }).join('')}
       </div>
       
+      <!-- Sections -->
+      <div class="home-lessons-title animate-fadeInUp" style="animation-delay: 0.75s;">
+        <h2>🧩 Secțiuni</h2>
+      </div>
+      <div class="home-sections">
+        ${getAllSections().map((section, idx) => {
+          const total = section.units ? section.units.length : (section.themes?.length || 0);
+          const done = section.units
+            ? section.units.filter(u => state.lessonsCompleted[u.id]?.completed).length
+            : null;
+          return `
+            <button class="home-section-card card-interactive animate-fadeInUp"
+                    data-section-id="${section.id}"
+                    style="animation-delay: ${0.8 + idx * 0.08}s">
+              <span class="home-section-icon">${section.icon}</span>
+              <div class="home-section-info">
+                <span class="home-section-title">${section.title}</span>
+                <span class="home-section-desc">${section.description}</span>
+              </div>
+              <span class="home-section-progress">${done !== null ? `${done}/${total}` : `${total} teme`}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- Dictionary Link -->
+      <div class="home-cognates-card animate-fadeInUp" style="animation-delay: 1s;">
+        <button class="btn btn-accent btn-full" id="btn-dictionary">
+          📖 Dicționar
+        </button>
+      </div>
+
       <!-- Cognates Link -->
-      <div class="home-cognates-card animate-fadeInUp" style="animation-delay: 0.8s;">
+      <div class="home-cognates-card animate-fadeInUp" style="animation-delay: 1.05s;">
         <button class="btn btn-secondary btn-full" id="btn-cognates">
           🇷🇴↔🇩🇪 Cuvinte similare Română-Germană
         </button>
@@ -192,6 +232,9 @@ export function attachHomeEvents(navigate) {
   
   // Settings
   document.getElementById('btn-settings')?.addEventListener('click', () => navigate('settings'));
+
+  // Schimbă profilul
+  document.getElementById('btn-switch-user')?.addEventListener('click', () => navigate('users'));
   
   // Profile
   document.getElementById('btn-profile')?.addEventListener('click', () => navigate('profile'));
@@ -201,4 +244,12 @@ export function attachHomeEvents(navigate) {
   
   // Cognates
   document.getElementById('btn-cognates')?.addEventListener('click', () => navigate('cognates'));
+
+  // Dictionary
+  document.getElementById('btn-dictionary')?.addEventListener('click', () => navigate('dictionary'));
+
+  // Sections
+  document.querySelectorAll('.home-section-card').forEach(card => {
+    card.addEventListener('click', () => navigate('section', { sectionId: card.dataset.sectionId }));
+  });
 }

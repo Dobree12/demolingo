@@ -89,15 +89,11 @@ const RAW_MAP = {
   'ich heisse': '👋', 'ich komme aus': '🌍',
 };
 
-// Lookup keys are stored in ASCII form. Still strip any German umlauts the
-// caller might pass in so existing data outside this file keeps working.
-const normalize = (s) => (s || '')
-  .toLowerCase()
-  .replace(/ä/g, 'a')
-  .replace(/ö/g, 'o')
-  .replace(/ü/g, 'u')
-  .replace(/ß/g, 'ss')
-  .trim();
+import { normalizeGerman } from '../utils/normalize.js';
+
+// Lookup keys are stored in ASCII form; normalizeGerman strips any umlauts
+// the caller might pass in, plus articles below.
+const normalize = (s) => normalizeGerman(s).replace(/^(der|die|das|ein|eine|einen)\s+/, '');
 
 const LOOKUP = (() => {
   const m = new Map();

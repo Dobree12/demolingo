@@ -51,12 +51,12 @@ export const wrongMessages = [
   'Nu-i nimic! Hai să privim răspunsul corect și să mergem mai departe! 🚀',
 ];
 
-// --- Hearts Lost Messages ---
-export const heartsLostMessages = [
-  'Ai folosit toate inimile, dar nu te opri! 💛 Repetă lecția și vei vedea cât de mult ai învățat!',
-  'Toate inimile s-au folosit! Dar asta înseamnă că ai încercat din greu! Hai din nou! 💪',
-  'Nu te descuraja că ai pierdut inimile! Repetarea e mama învățării! 🌱',
-  'Inimile s-au terminat, dar curajul tău nu! Hai încă o dată! 💪',
+// --- Skip Messages (după „Treci peste") ---
+export const skipMessages = [
+  'Nu-i nimic! Îl vei reîntâlni la practică 💛',
+  'E în regulă, mergem mai departe! Cuvântul ăsta revine la repetiție 🌱',
+  'Niciun stres! Data viitoare îl știi sigur 💪',
+  'Trecem peste — învățarea nu e o cursă! 😊',
 ];
 
 // --- Lesson Complete Messages ---

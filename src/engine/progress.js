@@ -201,6 +201,12 @@ export function recordCorrect() {
   updateState({ totalCorrect: state.totalCorrect + 1 });
 }
 
+// O „încercare" = orice verificare de răspuns, corectă sau greșită
+export function recordAttempt() {
+  const state = loadState();
+  updateState({ totalAttempts: (state.totalAttempts || 0) + 1 });
+}
+
 // --- Badges ---
 const BADGE_DEFINITIONS = [
   { id: 'first_lesson', icon: '🎓', name: 'Prima lecție', description: 'Ai completat prima ta lecție!', check: s => s.totalLessonsCompleted >= 1 },
@@ -256,7 +262,9 @@ export function getStats() {
       ? Math.round((state.totalCorrect / (state.totalCorrect + state.totalWrong)) * 100) 
       : 0,
     totalLessonsCompleted: state.totalLessonsCompleted,
-    dailyMinutes: state.dailyMinutesToday,
+    totalAttempts: state.totalAttempts || 0,
+    totalMinutes: state.totalMinutes || 0,
+    dailyMinutes: Math.round(state.dailyMinutesToday),
     dailyGoal: state.dailyGoalMinutes,
     dailyGoalCompleted: state.dailyGoalCompleted,
     xpProgress: getXPProgress(state.xp, state.level),

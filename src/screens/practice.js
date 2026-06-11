@@ -76,8 +76,10 @@ export function renderPractice(navigate) {
           <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-xl);">
             ${mistakes.slice(0, 10).map((m, i) => {
               const ex = m.exercise;
-              const display = ex.prompt || ex.question || ex.word || ex.sentence || '';
-              const answer = ex.answer || ex.correct || '';
+              const blankLine = ex.lines ? ex.lines.find(l => l.blank) : null;
+              const display = ex.prompt || ex.question || ex.word || ex.sentence
+                || ex.promptDe || ex.wordDe || (ex.scene ? `💬 ${ex.scene}` : '') || '';
+              const answer = ex.answer || ex.correct || blankLine?.answer || '';
               return `
                 <div class="card animate-fadeInUp" style="animation-delay: ${i * 0.05}s; padding: var(--space-md);">
                   <p style="font-weight: 700; font-size: var(--font-size-sm); color: var(--text-primary);">${display}</p>

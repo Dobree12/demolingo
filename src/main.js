@@ -4,8 +4,9 @@
 
 import './styles/index.css';
 import './styles/screens.css';
-import { loadState, updateState } from './engine/storage.js';
+import { loadState, getRegistry } from './engine/storage.js';
 import { checkAndUpdateStreak } from './engine/progress.js';
+import { initTimeTracker } from './engine/timeTracker.js';
 import { renderHome, attachHomeEvents } from './screens/home.js';
 import { renderLesson, attachLessonEvents } from './screens/lesson.js';
 import { renderResults, attachResultsEvents } from './screens/results.js';
@@ -13,6 +14,10 @@ import { renderCognates, attachCognatesEvents } from './screens/cognates.js';
 import { renderProfile, attachProfileEvents } from './screens/profile.js';
 import { renderSettings, attachSettingsEvents } from './screens/settings.js';
 import { renderPractice, attachPracticeEvents } from './screens/practice.js';
+import { renderUsers, attachUsersEvents } from './screens/users.js';
+import { renderSection, attachSectionEvents } from './screens/section.js';
+import { renderThemeGallery, attachThemeGalleryEvents } from './screens/themeGallery.js';
+import { renderDictionary, attachDictionaryEvents } from './screens/dictionary.js';
 
 // --- App State ---
 let currentScreen = 'home';
@@ -60,6 +65,18 @@ function render() {
     case 'practice':
       html = renderPractice(navigate);
       break;
+    case 'users':
+      html = renderUsers(navigate);
+      break;
+    case 'section':
+      html = renderSection(navigate, currentParams);
+      break;
+    case 'themeGallery':
+      html = renderThemeGallery(navigate, currentParams);
+      break;
+    case 'dictionary':
+      html = renderDictionary(navigate);
+      break;
     default:
       html = renderHome(navigate);
   }
@@ -76,6 +93,10 @@ function render() {
       case 'profile': attachProfileEvents(navigate); break;
       case 'settings': attachSettingsEvents(navigate); break;
       case 'practice': attachPracticeEvents(navigate); break;
+      case 'users': attachUsersEvents(navigate); break;
+      case 'section': attachSectionEvents(navigate, currentParams); break;
+      case 'themeGallery': attachThemeGalleryEvents(navigate, currentParams); break;
+      case 'dictionary': attachDictionaryEvents(navigate); break;
     }
   });
 }
@@ -83,21 +104,17 @@ function render() {
 // --- Boot ---
 function boot() {
   applyTheme();
+  initTimeTracker();
+
+  // Fără profil activ → ecranul de alegere a profilului
+  const registry = getRegistry();
+  if (!registry.activeUserId) {
+    navigate('users');
+    return;
+  }
+
   checkAndUpdateStreak();
   navigate('home');
-  
-  // Track session time
-  const startTime = Date.now();
-  window.addEventListener('beforeunload', () => {
-    const minutes = Math.round((Date.now() - startTime) / 60000);
-    if (minutes > 0) {
-      const state = loadState();
-      const today = new Date().toDateString();
-      if (state.lastActiveDate === today) {
-        updateState({ dailyMinutesToday: state.dailyMinutesToday + minutes });
-      }
-    }
-  });
 }
 
 // --- Start ---

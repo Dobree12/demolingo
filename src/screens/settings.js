@@ -2,7 +2,7 @@
 // Settings Screen — App preferences & reset
 // ============================================
 
-import { loadState, updateState, resetState } from '../engine/storage.js';
+import { loadState, updateState, resetState, getActiveUser, deleteUser } from '../engine/storage.js';
 import { setDailyGoal } from '../engine/progress.js';
 import { renderMascot } from '../components/mascot.js';
 
@@ -149,16 +149,29 @@ export function renderSettings(navigate) {
         </label>
       </div>
 
+      <!-- Profil -->
+      <div class="animate-fadeInUp" style="animation-delay: 0.25s; margin-bottom: var(--space-xl);">
+        <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--text-primary); margin-bottom: var(--space-sm);">
+          👥 Profil
+        </h2>
+        <button class="btn btn-secondary btn-full" id="btn-change-user" style="margin-bottom: var(--space-sm);">
+          🔄 Schimbă profilul
+        </button>
+      </div>
+
       <!-- Danger Zone -->
       <div class="animate-fadeInUp" style="animation-delay: 0.3s; margin-bottom: var(--space-xl);">
         <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-hearts); margin-bottom: var(--space-sm);">
           ⚠️ Zonă periculoasă
         </h2>
         <p style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--space-md);">
-          Atenție! Această acțiune nu poate fi anulată.
+          Atenție! Aceste acțiuni afectează doar profilul activ și nu pot fi anulate.
         </p>
-        <button class="btn btn-danger btn-full" id="btn-reset-progress">
-          🗑️ Resetează tot progresul
+        <button class="btn btn-danger btn-full" id="btn-reset-progress" style="margin-bottom: var(--space-sm);">
+          🗑️ Resetează progresul acestui profil
+        </button>
+        <button class="btn btn-danger btn-full" id="btn-delete-user">
+          ❌ Șterge acest profil
         </button>
       </div>
 
@@ -240,17 +253,37 @@ export function attachSettingsEvents(navigate) {
     });
   }
 
-  // Reset progress
+  // Schimbă profilul
+  document.getElementById('btn-change-user')?.addEventListener('click', () => {
+    navigate('users');
+  });
+
+  // Reset progress (doar profilul activ)
   document.getElementById('btn-reset-progress')?.addEventListener('click', () => {
     const confirmed = confirm(
-      '⚠️ Ești absolut sigur?\n\nTot progresul tău va fi șters:\n- XP și nivel\n- Lecții completate\n- Insigne câștigate\n- Serie zilnică\n\nAceastă acțiune NU poate fi anulată!'
+      '⚠️ Ești absolut sigur?\n\nTot progresul ACESTUI profil va fi șters:\n- XP și nivel\n- Lecții completate\n- Insigne câștigate\n- Serie zilnică\n\nAceastă acțiune NU poate fi anulată!'
     );
     if (confirmed) {
-      const doubleConfirm = confirm('Ultima confirmare: chiar vrei să ștergi TOT?');
+      const doubleConfirm = confirm('Ultima confirmare: chiar vrei să ștergi TOT progresul acestui profil?');
       if (doubleConfirm) {
         resetState();
         document.documentElement.removeAttribute('data-theme');
         navigate('home');
+      }
+    }
+  });
+
+  // Șterge profilul activ
+  document.getElementById('btn-delete-user')?.addEventListener('click', () => {
+    const active = getActiveUser();
+    if (!active) return;
+    const confirmed = confirm(`⚠️ Ștergi profilul „${active.name}" și tot progresul lui?`);
+    if (confirmed) {
+      const doubleConfirm = confirm('Ultima confirmare: profilul și progresul vor dispărea definitiv. Continui?');
+      if (doubleConfirm) {
+        deleteUser(active.id);
+        document.documentElement.removeAttribute('data-theme');
+        navigate('users');
       }
     }
   });

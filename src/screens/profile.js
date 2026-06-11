@@ -3,13 +3,22 @@
 // ============================================
 
 import { getStats, getAllBadges } from '../engine/progress.js';
-import { loadState } from '../engine/storage.js';
+import { loadState, getActiveUser } from '../engine/storage.js';
 import { renderMascot } from '../components/mascot.js';
+
+function formatMinutes(min) {
+  const total = Math.round(min);
+  if (total < 60) return `${total} min`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
 
 export function renderProfile(navigate) {
   const stats = getStats();
   const badges = getAllBadges();
   const state = loadState();
+  const activeUser = getActiveUser();
 
   const earnedCount = badges.filter(b => b.earned).length;
   const mascotState = stats.level > 3 ? 'celebrating' : 'happy';
@@ -25,6 +34,8 @@ export function renderProfile(navigate) {
     { icon: '🎯', label: 'Precizie', value: `${stats.accuracy}%`, color: 'var(--color-primary)' },
     { icon: '✅', label: 'Lecții completate', value: stats.totalLessonsCompleted, color: 'var(--color-primary-dark)' },
     { icon: '⏱️', label: 'Obiectiv zilnic', value: `${stats.dailyMinutes}/${stats.dailyGoal} min`, color: 'var(--color-accent)' },
+    { icon: '⏳', label: 'Timp total de învățare', value: formatMinutes(stats.totalMinutes), color: 'var(--color-xp)' },
+    { icon: '✏️', label: 'Răspunsuri date', value: stats.totalAttempts, color: 'var(--color-secondary)' },
   ];
 
   const statsGridHTML = statItems.map((item, idx) => `
@@ -82,8 +93,11 @@ export function renderProfile(navigate) {
       <!-- Title -->
       <div class="animate-fadeInDown" style="text-align: center; margin-bottom: var(--space-lg);">
         <h1 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-extrabold); color: var(--text-primary);">
-          👤 Profilul Meu
+          ${activeUser ? `${activeUser.avatar} ${activeUser.name}` : '👤 Profilul Meu'}
         </h1>
+        <button class="btn btn-secondary btn-sm" id="btn-profile-switch" style="margin-top: var(--space-sm); padding: 6px 14px;">
+          👥 Schimbă profilul
+        </button>
       </div>
 
       <!-- Mascot -->
@@ -154,5 +168,10 @@ export function attachProfileEvents(navigate) {
   // Back button
   document.getElementById('btn-back-profile')?.addEventListener('click', () => {
     navigate('home');
+  });
+
+  // Schimbă profilul
+  document.getElementById('btn-profile-switch')?.addEventListener('click', () => {
+    navigate('users');
   });
 }
