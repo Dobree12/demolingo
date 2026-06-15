@@ -96,9 +96,16 @@ function checkExercise(ex, context) {
       check(ex.promptDe, `${context} › promptDe`);
       break;
     case 'multiChoice': {
-      const correctIsGerman = germanPhrasePasses(ex.correct);
+      // Direcția întrebării: opțiunile sunt germane doar dacă răspunsul corect
+      // e german ȘI nu un cuvânt românesc care coincide cu o intrare germană
+      // (ex. „august", „elefant", numele lunilor). Altfel e de→ro și opțiunile
+      // sunt traduceri românești — întrebarea citează cuvântul german.
+      const correctIsGerman = germanPhrasePasses(ex.correct) && !looksRomanian(ex.correct);
       if (correctIsGerman) {
-        ex.options.forEach((o, i) => check(o, `${context} › option #${i + 1}`));
+        ex.options.forEach((o, i) => {
+          if (looksRomanian(o)) return; // distractor românesc, nu cuvânt german
+          check(o, `${context} › option #${i + 1}`);
+        });
       } else {
         // întrebarea poate cita un cuvânt german: 'Ce înseamnă "neun"?'
         for (const quoted of extractQuoted(ex.question || '')) {

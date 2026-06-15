@@ -87,6 +87,47 @@ const RAW_MAP = {
   // Phrases / fillers
   'freut mich': '😊', 'wie heisst du': '❓', 'wie geht es dir': '🤔',
   'ich heisse': '👋', 'ich komme aus': '🌍',
+
+  // Body (extended)
+  'haar': '💇', 'bein': '🦵', 'arm': '💪', 'zahn': '🦷', 'finger': '👆', 'gesicht': '😐',
+
+  // Clothes
+  'hemd': '👔', 'hose': '👖', 'schuh': '👟', 'jacke': '🧥', 'kleid': '👗',
+  'mantel': '🧥', 'mutze': '🧢', 'socke': '🧦', 'hut': '🎩', 'rock': '👗', 'pullover': '🧶',
+
+  // House & furniture
+  'zimmer': '🛋️', 'kuche': '🍳', 'bad': '🛁', 'tisch': '🪵', 'stuhl': '🪑',
+  'bett': '🛏️', 'tur': '🚪', 'fenster': '🪟', 'lampe': '💡', 'sofa': '🛋️',
+  'schrank': '🗄️', 'garten': '🌷',
+
+  // Weather & seasons
+  'wetter': '🌤️', 'sturm': '🌩️', 'nebel': '🌫️', 'himmel': '🌌',
+  'sommer': '🏖️', 'winter': '⛄', 'fruhling': '🌸', 'herbst': '🍂',
+
+  // Jobs
+  'lehrer': '👨‍🏫', 'arzt': '👨‍⚕️', 'student': '🧑‍🎓', 'koch': '👨‍🍳',
+  'kellner': '🧑‍🍳', 'polizist': '👮', 'bauer': '👨‍🌾', 'fahrer': '🚕', 'verkaufer': '🛍️',
+
+  // Time (extended)
+  'monat': '📆', 'jahr': '🗓️', 'zeit': '⏰', 'stunde': '🕐', 'minute': '⏱️', 'uhr': '⌚',
+  'woche': '📅', 'wochenende': '🎉',
+
+  // Places (extended)
+  'supermarkt': '🛒', 'strasse': '🛣️', 'markt': '🏪',
+
+  // Nature (extended)
+  'wald': '🌲', 'fluss': '🏞️', 'see': '🛶', 'insel': '🏝️', 'strand': '🏖️',
+  'feld': '🌾', 'stein': '🪨', 'erde': '🌍',
+
+  // Food (extended)
+  'gemuse': '🥦', 'obst': '🍏', 'zucker': '🍬', 'salz': '🧂',
+
+  // Animals (extended)
+  'tiger': '🐅', 'affe': '🐒', 'wolf': '🐺',
+
+  // Adjectives (extended)
+  'schnell': '🏃', 'langsam': '🐢', 'teuer': '💰', 'billig': '🪙',
+  'lang': '📏', 'kurz': '📐', 'stark': '💪', 'leer': '🈳',
 };
 
 import { normalizeGerman } from '../utils/normalize.js';

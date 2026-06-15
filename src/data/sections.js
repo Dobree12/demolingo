@@ -6,6 +6,8 @@
 // Unitățile au aceeași formă ca lecțiile și rulează prin același motor.
 // Convenție proiect: text german în ASCII (a/o/u/ss în loc de ä/ö/ü/ß).
 
+import { augmentExercises } from './generator.js';
+
 export const sections = [
   // ------------------------------------------------
   // 1. CUVINTE UZUALE — vocabular de bază, emoji-first
@@ -338,9 +340,106 @@ export const sections = [
           { de: 'Taxi', ro: 'taxi' },
         ],
       },
+      {
+        id: 'corp',
+        title: 'Corpul',
+        icon: '🧍',
+        words: [
+          { de: 'Kopf', ro: 'cap' },
+          { de: 'Auge', ro: 'ochi' },
+          { de: 'Ohr', ro: 'ureche' },
+          { de: 'Nase', ro: 'nas' },
+          { de: 'Mund', ro: 'gură' },
+          { de: 'Hand', ro: 'mână' },
+          { de: 'Fuss', ro: 'picior' },
+          { de: 'Herz', ro: 'inimă' },
+        ],
+      },
+      {
+        id: 'haine',
+        title: 'Haine',
+        icon: '👕',
+        words: [
+          { de: 'Hemd', ro: 'cămașă' },
+          { de: 'Hose', ro: 'pantaloni' },
+          { de: 'Schuh', ro: 'pantof' },
+          { de: 'Jacke', ro: 'jachetă' },
+          { de: 'Kleid', ro: 'rochie' },
+          { de: 'Mantel', ro: 'palton' },
+          { de: 'Mutze', ro: 'căciulă' },
+          { de: 'Socke', ro: 'șosetă' },
+        ],
+      },
+      {
+        id: 'casa',
+        title: 'Casa',
+        icon: '🛋️',
+        words: [
+          { de: 'Tisch', ro: 'masă' },
+          { de: 'Stuhl', ro: 'scaun' },
+          { de: 'Bett', ro: 'pat' },
+          { de: 'Tur', ro: 'ușă' },
+          { de: 'Fenster', ro: 'fereastră' },
+          { de: 'Lampe', ro: 'lampă' },
+          { de: 'Schrank', ro: 'dulap' },
+          { de: 'Sofa', ro: 'canapea' },
+        ],
+      },
+      {
+        id: 'vreme',
+        title: 'Vreme',
+        icon: '🌤️',
+        words: [
+          { de: 'Sonne', ro: 'soare' },
+          { de: 'Wolke', ro: 'nor' },
+          { de: 'Regen', ro: 'ploaie' },
+          { de: 'Schnee', ro: 'zăpadă' },
+          { de: 'Wind', ro: 'vânt' },
+          { de: 'Sturm', ro: 'furtună' },
+          { de: 'Nebel', ro: 'ceață' },
+          { de: 'Himmel', ro: 'cer' },
+        ],
+      },
+      {
+        id: 'meserii',
+        title: 'Meserii',
+        icon: '💼',
+        words: [
+          { de: 'Lehrer', ro: 'profesor' },
+          { de: 'Arzt', ro: 'medic' },
+          { de: 'Koch', ro: 'bucătar' },
+          { de: 'Kellner', ro: 'chelner' },
+          { de: 'Polizist', ro: 'polițist' },
+          { de: 'Bauer', ro: 'fermier' },
+          { de: 'Student', ro: 'student' },
+          { de: 'Verkaufer', ro: 'vânzător' },
+        ],
+      },
+      {
+        id: 'fructe-legume',
+        title: 'Fructe și legume',
+        icon: '🥗',
+        words: [
+          { de: 'Apfel', ro: 'măr' },
+          { de: 'Banane', ro: 'banană' },
+          { de: 'Tomate', ro: 'roșie' },
+          { de: 'Kartoffel', ro: 'cartof' },
+          { de: 'Erdbeere', ro: 'căpșună' },
+          { de: 'Salat', ro: 'salată' },
+          { de: 'Gemuse', ro: 'legume' },
+          { de: 'Obst', ro: 'fructe' },
+        ],
+      },
     ],
   },
 ];
+
+// 10x volum la unitățile vizuale simple (cuvinte uzuale): adăugăm exerciții
+// generate din cuvintele fiecărei unități. Dialogurile (propoziții scurte) și
+// Antrenamentul (deja generat) rămân neatinse.
+for (const unit of getSectionById('cuvinte-uzuale')?.units || []) {
+  unit.exercises = augmentExercises(unit.exercises, unit.words, 10, `unit:${unit.id}`);
+}
 
 export function getSectionById(id) {
   return sections.find(s => s.id === id);

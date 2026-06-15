@@ -30,7 +30,9 @@ Branch-ul `main` se push-uiește separat (`git push origin main`).
 - Tipuri de exerciții: multiChoice, translate_ro_de/de_ro, match, fillBlank, listen, speak, wordBank, picturePick, **dialogue** (bule de chat animate + TTS secvențial, replica lipsă din word-bank sau variante; `src/exercises/dialogue.js`).
 - `src/engine/storage.js` — **multi-profil**: registru `invatam_germana_users` + stare per user `invatam_germana::<id>`. Starea veche (`invatam_germana`) se migrează automat la primul profil, cu backup în `invatam_germana_backup_v1`. `saveState` e no-op fără profil activ.
 - `src/engine/timeTracker.js` — heartbeat: +0.5 min la 30s doar dacă tab-ul e vizibil și a existat interacțiune în ultimele 90s; alimentează `totalMinutes` + obiectivul zilnic. NU mai există numărare de timp în `finishLesson`/`beforeunload` (ar dubla).
-- `src/data/dictionary.js` — 162 intrări `{de, ro, article?, original?, category}` + `findByDe`, `hasGermanEntry`, `searchDictionary`.
+- `src/data/dictionary.js` — 359 intrări `{de, ro, article?, original?, category}` + `findByDe`, `hasGermanEntry`, `searchDictionary`. (Vocabular A1 extins: corp, haine, casă, zile, luni, vreme, meserii, timp, locuri, verbe, adjective, numere 11–20, natură, mâncare.)
+- `src/data/generator.js` — **generator determinist** (RNG seeded pe `seed`/unitId) care produce exerciții (multiChoice ambele sensuri, translate ambele, listen, speak, match, picturePick) DOAR din cuvinte aflate în dicționar → trece de verify. `generateExercises({words,pool,count,seed,types})`, `augmentExercises(base, words, factor, seed)` (marchează exercițiile generate cu `gen:true`), `TYPE_SETS` (easy/medium/hard).
+- `src/data/extraLessons.js` — **100 de lecții suplimentare** (`lp-1..lp-100`) care continuă calea de lecții după cele 7 clasice. Generate determinist din dicționar, dificultate crescătoare (easy→medium→hard), marcate cu `extra: true`. Home le afișează pe **serii de 10** cu deblocare secvențială (1 deschis + 9 cu lacăt; termini 10 → apare următoarea serie). Sunt importate și adăugate în `lessons` (`lessons.push(...extraLessons)`).
 
 ## Decizii de design (confirmate cu userul)
 
@@ -43,8 +45,10 @@ Branch-ul `main` se push-uiește separat (`git push origin main`).
 
 ## Conținut
 
-- `src/data/lessons.js` — 7 lecții clasice (salutari → animale), ~91 exerciții.
-- `src/data/sections.js` — 3 secțiuni: **Cuvinte uzuale** (3 unități, doar exerciții vizuale ușoare), **Propoziții scurte** (2 unități: word-bank + dialoguri), **Imagini și cuvinte** (6 galerii tematice stil beverage.png; quiz-urile se generează pe loc în `themeGallery.js`).
+- `src/data/lessons.js` — 7 lecții clasice (salutari → animale) + **100 suplimentare** din `extraLessons.js` (total 107 în `lessons`). Exercițiile autoreate ale celor 7 sunt **augmentate la ~10x** (pool 120–150/lecție); `resolveUnit` în `content.js` eșantionează **max 14/sesiune** (păstrează autoreatele la început, completează cu generate aleatorii → primul exercițiu stabil, varietate la reluare). Cele 100 suplimentare au câte ~5–7 exerciții (sub cap, rulează integral).
+- Home (`home.js`): cele 7 clasice se afișează normal; cele 100 (`extra`) sub titlul **„🏆 Provocări"** pe serii de 10 cu deblocare secvențială (doar seria atinsă vizibilă + card-teaser cu lacăt). Stiluri `.series-header`/`.series-teaser`/`.home-extra-title` în `styles/screens.css`.
+- `src/data/sections.js` — 3 secțiuni: **Cuvinte uzuale** (3 unități, augmentate 10x), **Propoziții scurte** (2 unități: word-bank + dialoguri, neaugmentate), **Imagini și cuvinte** (12 galerii tematice; quiz pe loc în `themeGallery.js`).
+- `scripts/verify-vocab.mjs`: la `multiChoice`, direcția se decide cu `germanPhrasePasses(correct) && !looksRomanian(correct)` și sare opțiunile care `looksRomanian` — altfel cuvinte ro care coincid cu intrări de (ex. „august", „elefant", lunile) erau raportate fals ca germane necunoscute.
 
 ## Verificare / testare
 

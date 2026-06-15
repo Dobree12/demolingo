@@ -2,6 +2,9 @@
 // Lesson Content — 7 A1-level units
 // ============================================
 
+import { augmentExercises } from './generator.js';
+import { extraLessons } from './extraLessons.js';
+
 export const lessons = [
   // ==========================================
   // UNIT 1: Greetings / Salutări
@@ -283,6 +286,17 @@ export const lessons = [
     ],
   },
 ];
+
+// 10x volum: fiecare lecție păstrează exercițiile autoreate (calitate, cu
+// exemple) și primește în plus exerciții generate din propriile cuvinte.
+// resolveUnit() eșantionează un subset per sesiune, ca să nu fie maraton.
+for (const lesson of lessons) {
+  lesson.exercises = augmentExercises(lesson.exercises, lesson.words, 10, `lesson:${lesson.id}`);
+}
+
+// Continuă calea de lecții cu cele 100 de provocări (serii de 10, generate).
+// Marcate cu `extra: true`; Home le afișează pe serii cu deblocare secvențială.
+lessons.push(...extraLessons);
 
 export function getLessonById(id) {
   return lessons.find(l => l.id === id);

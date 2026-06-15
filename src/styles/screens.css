@@ -1509,3 +1509,36 @@ input:focus-visible {
 [data-theme="dark"] .card-interactive::after {
   background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
 }
+
+/* --- Serii de lecții (Provocări) pe Home --- */
+.home-extra-title {
+  margin: var(--space-xl) 0 var(--space-xs);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-primary);
+}
+.series-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: var(--space-lg) 0 var(--space-xs);
+  padding-bottom: var(--space-xs);
+  border-bottom: 2px solid var(--border-color);
+}
+.series-header-title {
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-extrabold);
+  color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.series-header-progress {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-bold);
+  color: var(--color-secondary);
+  background: rgba(206, 130, 255, 0.12);
+  padding: 2px 10px; border-radius: 999px;
+}
+.series-teaser {
+  display: flex; align-items: center; gap: var(--space-md);
+  margin-top: var(--space-lg); padding: var(--space-lg);
+  background: var(--bg-card); border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-lg); opacity: 0.75;
+}
+.series-teaser-lock { font-size: 32px; }
+.series-teaser strong { color: var(--text-primary); font-size: var(--font-size-md); }
+.series-teaser p { margin: 2px 0 0; font-size: var(--font-size-xs); color: var(--text-secondary); }

@@ -36,7 +36,85 @@ export function renderHome(navigate) {
   
   // Streak message
   const streakMsg = streakMessages[streak] || (streak > 0 ? `🔥 ${streak} zile la rând!` : '');
-  
+
+  // --- Harta de lecții ---
+  // Cele 7 clasice se afișează normal; cele 100 suplimentare (`extra`) se
+  // afișează pe serii de 10 cu deblocare secvențială: doar seria atinsă e
+  // vizibilă (1 deschis + 9 cu lacăt), iar terminarea celor 10 o deblochează
+  // pe următoarea.
+  const nodeHTML = (lesson, delayIdx) => {
+    const completed = isLessonCompleted(lesson.id);
+    const unlocked = isLessonUnlocked(lesson.id, lessons);
+    const stars = state.lessonsCompleted[lesson.id]?.stars || 0;
+    return `
+      <div class="lesson-node animate-fadeInUp ${completed ? 'lesson-completed' : ''} ${unlocked ? 'lesson-unlocked' : 'lesson-locked'}"
+           style="animation-delay: ${0.3 + delayIdx * 0.05}s;"
+           data-lesson-id="${lesson.id}"
+           ${unlocked ? `id="lesson-${lesson.id}"` : ''}>
+        <div class="lesson-node-circle">
+          <span class="lesson-node-icon">${completed ? '✅' : unlocked ? lesson.icon : '🔒'}</span>
+        </div>
+        <div class="lesson-node-info">
+          <h3 class="lesson-node-title">${lesson.title}</h3>
+          <p class="lesson-node-subtitle">${lesson.titleDe}</p>
+          ${completed ? `
+            <div class="lesson-stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+          ` : unlocked ? `
+            <p class="lesson-node-desc">${lesson.description}</p>
+          ` : `
+            <p class="lesson-node-desc" style="opacity: 0.5;">Completează lecția anterioară</p>
+          `}
+        </div>
+        ${unlocked ? '<span class="lesson-node-arrow">→</span>' : ''}
+      </div>
+    `;
+  };
+
+  const classicLessons = lessons.filter(l => !l.extra);
+  const extra = lessons.filter(l => l.extra);
+
+  let lessonMapHTML = `<div class="lesson-map">${classicLessons.map((l, i) => nodeHTML(l, i)).join('')}</div>`;
+
+  if (extra.length) {
+    const size = 10;
+    const seriesCount = Math.ceil(extra.length / size);
+    const seriesDone = [];
+    for (let s = 0; s < seriesCount; s++) {
+      seriesDone[s] = extra.slice(s * size, s * size + size).every(l => isLessonCompleted(l.id));
+    }
+    const firstExtraUnlocked = isLessonUnlocked(extra[0].id, lessons);
+    const reached = s => (s === 0 ? firstExtraUnlocked : seriesDone[s - 1]);
+
+    const blocks = ['<h2 class="home-extra-title">🏆 Provocări</h2>'];
+    let di = classicLessons.length;
+    for (let s = 0; s < seriesCount; s++) {
+      if (reached(s)) {
+        const slice = extra.slice(s * size, s * size + size);
+        const done = slice.filter(l => isLessonCompleted(l.id)).length;
+        blocks.push(`
+          <div class="series-header">
+            <span class="series-header-title">Seria ${s + 1} / ${seriesCount}</span>
+            <span class="series-header-progress">${done}/${slice.length}</span>
+          </div>
+        `);
+        blocks.push(`<div class="lesson-map">${slice.map((l, i) => nodeHTML(l, di + i)).join('')}</div>`);
+        di += slice.length + 1;
+      } else {
+        const label = s === 0
+          ? 'Termină lecțiile de bază ca să deblochezi provocările'
+          : `Termină seria ${s} ca să deblochezi următoarele 10`;
+        blocks.push(`
+          <div class="series-teaser">
+            <span class="series-teaser-lock">🔒</span>
+            <div><strong>Seria ${s + 1}</strong><p>${label}</p></div>
+          </div>
+        `);
+        break;
+      }
+    }
+    lessonMapHTML += blocks.join('');
+  }
+
   return `
     <div class="home-screen">
       <!-- Header -->
@@ -134,40 +212,7 @@ export function renderHome(navigate) {
       <div class="home-lessons-title animate-fadeInUp" style="animation-delay: 0.25s;">
         <h2>📖 Lecții</h2>
       </div>
-      <div class="lesson-map">
-        ${lessons.map((lesson, idx) => {
-          const completed = isLessonCompleted(lesson.id);
-          const unlocked = isLessonUnlocked(lesson.id, lessons);
-          const lessonData = state.lessonsCompleted[lesson.id];
-          const stars = lessonData?.stars || 0;
-          const delay = 0.3 + idx * 0.08;
-          
-          return `
-            <div class="lesson-node animate-fadeInUp ${completed ? 'lesson-completed' : ''} ${unlocked ? 'lesson-unlocked' : 'lesson-locked'}"
-                 style="animation-delay: ${delay}s;"
-                 data-lesson-id="${lesson.id}"
-                 ${unlocked ? `id="lesson-${lesson.id}"` : ''}>
-              <div class="lesson-node-circle">
-                <span class="lesson-node-icon">${completed ? '✅' : unlocked ? lesson.icon : '🔒'}</span>
-              </div>
-              <div class="lesson-node-info">
-                <h3 class="lesson-node-title">${lesson.title}</h3>
-                <p class="lesson-node-subtitle">${lesson.titleDe}</p>
-                ${completed ? `
-                  <div class="lesson-stars">
-                    ${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}
-                  </div>
-                ` : unlocked ? `
-                  <p class="lesson-node-desc">${lesson.description}</p>
-                ` : `
-                  <p class="lesson-node-desc" style="opacity: 0.5;">Completează lecția anterioară</p>
-                `}
-              </div>
-              ${unlocked ? '<span class="lesson-node-arrow">→</span>' : ''}
-            </div>
-          `;
-        }).join('')}
-      </div>
+      ${lessonMapHTML}
       
       <!-- Sections -->
       <div class="home-lessons-title animate-fadeInUp" style="animation-delay: 0.75s;">
