@@ -10,6 +10,7 @@
 
 import { dictionary } from './dictionary.js';
 import { generateExercises, TYPE_SETS } from './generator.js';
+import { SENTENCE_GROUPS, generateSentenceExercises } from './sentenceBank.js';
 
 // Grupuri tematice (categorie din dicționar → pool de cuvinte pentru un nod)
 const GROUPS = [
@@ -88,4 +89,38 @@ function buildExtraLessons() {
   return out;
 }
 
-export const extraLessons = buildExtraLessons();
+// --- 50 de lecții noi, pe propoziții scurte (accent pe verbe) ---
+// Continuă numerotarea după cele 100 de provocări pe cuvinte (lp-101 … lp-150),
+// deci devin automat seriile 11–15 pe harta Home (Math.ceil(n / 10)). Conținutul
+// vine din banc de propoziții verificate (vezi data/sentenceBank.js).
+const SENTENCE_TOTAL = 50;
+
+function buildSentenceLessons() {
+  const out = [];
+  for (let i = 1; i <= SENTENCE_TOTAL; i++) {
+    const n = TOTAL + i;                          // 101 … 150
+    const series = Math.ceil(n / EXTRA_SERIES_SIZE); // 11 … 15
+    const group = SENTENCE_GROUPS[(i - 1) % SENTENCE_GROUPS.length];
+    const id = `lp-${n}`;
+    const exercises = generateSentenceExercises({
+      sentences: group.sentences,
+      count: 6,
+      seed: id,
+    });
+    out.push({
+      id,
+      title: `Lecția ${CLASSIC_COUNT + n}`,
+      titleDe: group.name,
+      icon: group.icon,
+      description: `Seria ${series} · ${group.name}`,
+      unit: CLASSIC_COUNT + n,
+      extra: true,
+      series,
+      words: group.sentences.map(s => ({ de: s.de, ro: s.ro })),
+      exercises,
+    });
+  }
+  return out;
+}
+
+export const extraLessons = [...buildExtraLessons(), ...buildSentenceLessons()];
