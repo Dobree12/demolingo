@@ -193,6 +193,17 @@
   gap: var(--space-sm);
 }
 
+/* În ecranul de secțiune nodurile sunt rânduri full-width, citibile — NU grila
+   de 2–3 coloane de pe Home (care, la lățimi mari, strânge textul și îl taie).
+   Specificitatea mai mare bate regulile .lesson-map din media queries. */
+.section-screen .lesson-map {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  padding: 0;
+  gap: var(--space-sm);
+}
+
 .lesson-node {
   display: flex;
   align-items: center;
@@ -349,28 +360,39 @@
 }
 
 .home-section-icon {
-  font-size: 32px;
+  font-size: 26px;
   line-height: 1;
   flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(120, 120, 128, 0.12);
+  border-radius: 12px;
 }
 
 .home-section-info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 2px;
   min-width: 0;
+  text-align: left;
 }
 
 .home-section-title {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
+  line-height: 1.25;
 }
 
 .home-section-desc {
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
+  line-height: 1.3;
 }
 
 .home-section-progress {
@@ -378,6 +400,7 @@
   font-weight: var(--font-weight-extrabold);
   color: var(--color-primary);
   flex-shrink: 0;
+  align-self: center;
 }
 
 
