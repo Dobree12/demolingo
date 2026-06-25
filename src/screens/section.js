@@ -18,8 +18,10 @@ export function renderSection(navigate, params) {
 
   let listHTML = '';
 
-  if (section.kind === 'themes') {
-    listHTML = `
+  // O secțiune poate avea ȘI teme (explorator imagine-cuvânt) ȘI unități pe
+  // serii — le randăm pe ambele, în ordinea: teme, apoi seriile de provocări.
+  if (section.themes && section.themes.length) {
+    listHTML += `
       <div class="theme-grid">
         ${section.themes.map((theme, idx) => `
           <button class="theme-card card-interactive animate-fadeInUp"
@@ -32,7 +34,12 @@ export function renderSection(navigate, params) {
         `).join('')}
       </div>
     `;
-  } else {
+  }
+
+  if (section.units && section.units.length) {
+    if (section.themes && section.themes.length) {
+      listHTML += '<h2 class="home-extra-title">🏆 Provocări vizuale</h2>';
+    }
     const state = loadState();
     const units = section.units;
 
@@ -105,9 +112,9 @@ export function renderSection(navigate, params) {
           break;
         }
       }
-      listHTML = blocks.join('');
+      listHTML += blocks.join('');
     } else {
-      listHTML = `
+      listHTML += `
         <div class="lesson-map">
           ${units.map((unit, idx) => nodeHTML(unit, idx, idx)).join('')}
         </div>
@@ -182,17 +189,15 @@ export function attachSectionEvents(navigate, params) {
 
   document.getElementById('btn-back-section')?.addEventListener('click', () => navigate('home'));
 
-  if (section.kind === 'themes') {
-    document.querySelectorAll('.theme-card').forEach(card => {
-      card.addEventListener('click', () => {
-        navigate('themeGallery', { sectionId: section.id, themeId: card.dataset.themeId });
-      });
+  // Atașăm ambele tipuri de handler — o secțiune poate avea și teme, și unități.
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      navigate('themeGallery', { sectionId: section.id, themeId: card.dataset.themeId });
     });
-  } else {
-    document.querySelectorAll('.lesson-node[data-unit-id]').forEach(node => {
-      node.addEventListener('click', () => {
-        navigate('lesson', { sectionId: section.id, unitId: node.dataset.unitId });
-      });
+  });
+  document.querySelectorAll('.lesson-node[data-unit-id]').forEach(node => {
+    node.addEventListener('click', () => {
+      navigate('lesson', { sectionId: section.id, unitId: node.dataset.unitId });
     });
-  }
+  });
 }

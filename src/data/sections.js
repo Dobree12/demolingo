@@ -7,6 +7,7 @@
 // Convenție proiect: text german în ASCII (a/o/u/ss în loc de ä/ö/ü/ß).
 
 import { augmentExercises } from './generator.js';
+import { buildVocabUnits, buildSentenceUnits, buildVisualUnits } from './sectionContent.js';
 
 export const sections = [
   // ------------------------------------------------
@@ -18,6 +19,8 @@ export const sections = [
     icon: '💬',
     description: 'Cuvintele de zi cu zi, cu imagini',
     kind: 'units',
+    series: true,
+    seriesSize: 10,
     units: [
       {
         id: 'cu-1',
@@ -102,6 +105,8 @@ export const sections = [
     icon: '🗨️',
     description: 'Propoziții simple și conversații de zi cu zi',
     kind: 'units',
+    series: true,
+    seriesSize: 10,
     units: [
       {
         id: 'ps-1',
@@ -250,6 +255,8 @@ export const sections = [
     icon: '🖼️',
     description: 'Învață vizual, pe teme: atinge, ascultă, ghicește',
     kind: 'themes',
+    series: true,
+    seriesSize: 10,
     themes: [
       {
         id: 'bauturi',
@@ -434,10 +441,17 @@ export const sections = [
   },
 ];
 
-// 10x volum la unitățile vizuale simple (cuvinte uzuale): adăugăm exerciții
-// generate din cuvintele fiecărei unități. Dialogurile (propoziții scurte) și
-// Antrenamentul (deja generat) rămân neatinse.
+// Fiecare secțiune ajunge la 100 de unități pe serii de 10 (deblocare
+// secvențială). Unitățile autoreate rămân primele; restul sunt generate
+// determinist din vocabular/propoziții (vezi sectionContent.js).
+getSectionById('cuvinte-uzuale').units.push(...buildVocabUnits(97, 'cug'));      // 3 + 97 = 100
+getSectionById('propozitii-scurte').units.push(...buildSentenceUnits(98, 'psg')); // 2 + 98 = 100
+getSectionById('imagini-cuvinte').units = buildVisualUnits(100, 'img');           // 100 (+ 12 teme explorator)
+
+// 10x volum doar la unitățile autoreate din „cuvinte uzuale"; cele generate au
+// deja un set propriu și sunt eșantionate la rulare, deci le sărim.
 for (const unit of getSectionById('cuvinte-uzuale')?.units || []) {
+  if (unit.generated) continue;
   unit.exercises = augmentExercises(unit.exercises, unit.words, 10, `unit:${unit.id}`);
 }
 
