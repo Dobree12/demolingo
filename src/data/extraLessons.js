@@ -10,7 +10,7 @@
 
 import { dictionary } from './dictionary.js';
 import { generateExercises, TYPE_SETS } from './generator.js';
-import { SENTENCE_GROUPS, generateSentenceExercises } from './sentenceBank.js';
+import { SENTENCE_GROUPS, SENTENCE_GROUPS_EXTRA, SENTENCE_TYPES_FULL, generateSentenceExercises } from './sentenceBank.js';
 
 // Grupuri tematice (categorie din dicționar → pool de cuvinte pentru un nod)
 const GROUPS = [
@@ -123,4 +123,41 @@ function buildSentenceLessons() {
   return out;
 }
 
-export const extraLessons = [...buildExtraLessons(), ...buildSentenceLessons()];
+// --- 100 de lecții noi, DOAR propoziții, cu mixul complet de tipuri ---
+// Seriile 16–25 (lp-151 … lp-250). Propozițiile folosesc exclusiv vocabularul
+// din dicționar (cuvintele învățate în seriile 1–15 + formele conjugate noi),
+// iar exercițiile acoperă toate tipurile: sentenceBuild, match, multiChoice,
+// listenChoice, trueFalse, wordBank, fillBlank, listen, speak, translate.
+const SENTENCE2_TOTAL = 100;
+const SENTENCE2_START = TOTAL + SENTENCE_TOTAL; // 150
+
+function buildSentenceLessons2() {
+  const out = [];
+  for (let i = 1; i <= SENTENCE2_TOTAL; i++) {
+    const n = SENTENCE2_START + i;                   // 151 … 250
+    const series = Math.ceil(n / EXTRA_SERIES_SIZE); // 16 … 25
+    const group = SENTENCE_GROUPS_EXTRA[(i - 1) % SENTENCE_GROUPS_EXTRA.length];
+    const id = `lp-${n}`;
+    const exercises = generateSentenceExercises({
+      sentences: group.sentences,
+      count: 7,
+      seed: id,
+      types: SENTENCE_TYPES_FULL,
+    });
+    out.push({
+      id,
+      title: `Lecția ${CLASSIC_COUNT + n}`,
+      titleDe: group.name,
+      icon: group.icon,
+      description: `Seria ${series} · ${group.name}`,
+      unit: CLASSIC_COUNT + n,
+      extra: true,
+      series,
+      words: group.sentences.map(s => ({ de: s.de, ro: s.ro })),
+      exercises,
+    });
+  }
+  return out;
+}
+
+export const extraLessons = [...buildExtraLessons(), ...buildSentenceLessons(), ...buildSentenceLessons2()];

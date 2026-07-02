@@ -88,8 +88,10 @@ export function renderSection(navigate, params) {
         if (reached(s)) {
           const slice = units.slice(s * size, s * size + size);
           const doneCount = slice.filter(u => isLessonCompleted(u.id)).length;
-          // Fiecare serie se poate restrânge (dropdown). Preferință persistată.
-          const collapsed = localStorage.getItem(`ui_series_${section.id}_${s}`) === '1';
+          // Fiecare serie se poate restrânge (dropdown). Seriile terminate 100%
+          // pornesc restrânse implicit; preferința salvată are prioritate.
+          const stored = localStorage.getItem(`ui_series_${section.id}_${s}`);
+          const collapsed = stored !== null ? stored === '1' : seriesDone[s];
           blocks.push(`
             <button class="series-header series-toggle animate-fadeInUp" data-series="${s}"
                     aria-expanded="${!collapsed}" style="animation-delay: ${0.05 + delayIdx * 0.04}s">

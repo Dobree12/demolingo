@@ -439,6 +439,44 @@ export const dictionary = [
 
   // --- Nume proprii folosite în lecții ---
   { de: 'Anna', ro: 'Anna (nume)', category: 'nume' },
+
+  // --- Cuvinte funcționale suplimentare (seriile 16–25, verificate PONS) ---
+  { de: 'in', ro: 'în', category: 'functionale' },
+  { de: 'im', ro: 'în (in dem)', category: 'functionale' },
+  { de: 'ins', ro: 'în / la (in das)', category: 'functionale' },
+  { de: 'nach', ro: 'spre / către', category: 'functionale' },
+  { de: 'zu', ro: 'la / spre', category: 'functionale' },
+  { de: 'dem', ro: 'articol hotărât (dativ)', category: 'functionale' },
+  { de: 'den', ro: 'articol hotărât (acuzativ masculin)', category: 'functionale' },
+  { de: 'meine', ro: 'a mea / ale mele', category: 'functionale' },
+  { de: 'wir', ro: 'noi', category: 'functionale' },
+  { de: 'gern', ro: 'cu plăcere / bucuros', category: 'functionale' },
+  { de: 'viel', ro: 'mult', category: 'functionale' },
+
+  // --- Forme verbale conjugate suplimentare (seriile 16–25, verificate PONS) ---
+  { de: 'gehe', ro: 'merg', category: 'verbe' },
+  { de: 'kaufe', ro: 'cumpăr', category: 'verbe' },
+  { de: 'kostet', ro: 'costă', category: 'verbe' },
+  { de: 'brauche', ro: 'am nevoie de', category: 'verbe' },
+  { de: 'wohne', ro: 'locuiesc', category: 'verbe' },
+  { de: 'wohnst', ro: 'locuiești', category: 'verbe' },
+  { de: 'schlafe', ro: 'dorm', category: 'verbe' },
+  { de: 'fahre', ro: 'merg (cu un vehicul) / conduc', category: 'verbe' },
+  { de: 'isst', ro: 'mănânci / mănâncă', category: 'verbe' },
+  { de: 'kommt', ro: 'vine', category: 'verbe' },
+  { de: 'lernt', ro: 'învață', category: 'verbe' },
+  { de: 'liebe', ro: 'iubesc', category: 'verbe' },
+  { de: 'arbeite', ro: 'muncesc', category: 'verbe' },
+  { de: 'arbeitet', ro: 'muncește / lucrează', category: 'verbe' },
+  { de: 'macht', ro: 'face', category: 'verbe' },
+  { de: 'machst', ro: 'faci', category: 'verbe' },
+  { de: 'sehe', ro: 'văd', category: 'verbe' },
+  { de: 'sprichst', ro: 'vorbești', category: 'verbe' },
+  { de: 'hore', ro: 'ascult / aud', original: 'höre', category: 'verbe' },
+  { de: 'schreibe', ro: 'scriu', category: 'verbe' },
+
+  // --- Substantive suplimentare ---
+  { de: 'Musik', ro: 'muzică', article: 'die', category: 'hobby' },
 ];
 
 // --- Lookup ---

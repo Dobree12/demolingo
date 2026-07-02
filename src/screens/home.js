@@ -105,13 +105,20 @@ export function renderHome(navigate) {
       if (reached(s)) {
         const slice = extra.slice(s * size, s * size + size);
         const done = slice.filter(l => isLessonCompleted(l.id)).length;
+        // Fiecare serie se poate restrânge; seriile terminate 100% pornesc
+        // restrânse implicit (preferința salvată are prioritate).
+        const stored = localStorage.getItem(`ui_series_home_${s}`);
+        const collapsed = stored !== null ? stored === '1' : seriesDone[s];
         blocks.push(`
-          <div class="series-header">
+          <button class="series-header series-toggle" data-series="${s}" aria-expanded="${!collapsed}">
             <span class="series-header-title">Seria ${s + 1} / ${seriesCount}</span>
-            <span class="series-header-progress">${done}/${slice.length}</span>
-          </div>
+            <span class="series-header-right">
+              <span class="series-header-progress">${done}/${slice.length}</span>
+              <span class="series-caret">${collapsed ? '▾' : '▴'}</span>
+            </span>
+          </button>
         `);
-        blocks.push(`<div class="lesson-map">${slice.map((l, i) => nodeHTML(l, di + i)).join('')}</div>`);
+        blocks.push(`<div class="lesson-map series-units ${collapsed ? 'is-collapsed' : ''}" data-series="${s}">${slice.map((l, i) => nodeHTML(l, di + i)).join('')}</div>`);
         di += slice.length + 1;
       } else {
         const label = s === 0
@@ -289,6 +296,20 @@ export function attachHomeEvents(navigate) {
     }
   });
   
+  // Toggle pe seriile de provocări — restrânge/expandează, persistă preferința
+  document.querySelectorAll('.series-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const s = btn.dataset.series;
+      const map = document.querySelector(`.series-units[data-series="${s}"]`);
+      if (!map) return;
+      const nowCollapsed = map.classList.toggle('is-collapsed');
+      localStorage.setItem(`ui_series_home_${s}`, nowCollapsed ? '1' : '0');
+      btn.setAttribute('aria-expanded', String(!nowCollapsed));
+      const caret = btn.querySelector('.series-caret');
+      if (caret) caret.textContent = nowCollapsed ? '▾' : '▴';
+    });
+  });
+
   // Toggle „Lecții de bază" — arată/ascunde blocul clasic, persistă preferința
   const classicToggle = document.getElementById('btn-toggle-classic');
   classicToggle?.addEventListener('click', () => {
