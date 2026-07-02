@@ -8,7 +8,7 @@
 
 import { augmentExercises } from './generator.js';
 import { buildVocabUnits, buildSentenceUnits, buildVisualUnits } from './sectionContent.js';
-import { buildAboutMeUnits, buildAboutMeSeriesUnits } from './aboutMeContent.js';
+import { buildAboutMeUnits, buildAboutMeSeriesUnits, buildAboutMeExtraUnits } from './aboutMeContent.js';
 
 export const sections = [
   // ------------------------------------------------
@@ -531,6 +531,7 @@ getSectionById('cuvinte-uzuale').units.push(...buildVocabUnits(97, 'cug'));     
 getSectionById('propozitii-scurte').units.push(...buildSentenceUnits(98, 'psg')); // 2 + 98 = 100
 getSectionById('despre-mine').units.push(...buildAboutMeUnits('dm', 3));           // 2 + 10 teme (×10 = 100 propoziții)
 getSectionById('despre-mine').units.push(...buildAboutMeSeriesUnits(100, 'dmg'));  // + 100 unități pe serii (reutilizează propozițiile)
+getSectionById('despre-mine').units.push(...buildAboutMeExtraUnits(50, 'dmg2'));   // + 50 unități (5 serii) cu propoziții NOI
 getSectionById('imagini-cuvinte').units = buildVisualUnits(100, 'img');           // 100 (+ 12 teme explorator)
 
 // 10x volum doar la unitățile autoreate din „cuvinte uzuale"; cele generate au

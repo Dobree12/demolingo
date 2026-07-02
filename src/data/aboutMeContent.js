@@ -238,13 +238,12 @@ function rshuffle(arr, rng) {
   return a;
 }
 
-// Unități suplimentare pe serii de 10, REUTILIZÂND cele 100 de propoziții:
-// fiecare unitate ia un eșantion (6) dintr-o temă, amestecat determinist, ca
-// reluările să pară proaspete. Deblocare secvențială (via section.series).
-export function buildAboutMeSeriesUnits(count = 100, prefix = 'dmg') {
+// Construiește `count` unități pe serii de 10 dintr-un set de teme, eșantionând
+// 6 propoziții/temă (amestecate determinist). Deblocare secvențială (section.series).
+function buildSeriesFrom(themes, count, prefix) {
   const out = [];
   for (let n = 0; n < count; n++) {
-    const theme = THEMES[n % THEMES.length];
+    const theme = themes[n % themes.length];
     const id = `${prefix}-${n + 1}`;
     const rng = makeRng(`ame:${id}`);
     const chosen = rshuffle(theme.items, rng).slice(0, 6);
@@ -258,4 +257,103 @@ export function buildAboutMeSeriesUnits(count = 100, prefix = 'dmg') {
     });
   }
   return out;
+}
+
+// Unități suplimentare pe serii, REUTILIZÂND cele 100 de propoziții din THEMES.
+export function buildAboutMeSeriesUnits(count = 100, prefix = 'dmg') {
+  return buildSeriesFrom(THEMES, count, prefix);
+}
+
+// Propoziții NOI (alt vocabular), același tip de exercițiu (sentenceBuild).
+const NEW_THEMES = [
+  {
+    title: 'Vremea',
+    icon: '🌦️',
+    description: 'Cum e afară azi',
+    items: [
+      ['Astăzi plouă.', 'Heute regnet es.'],
+      ['Este frig afară.', 'Es ist kalt draussen.'],
+      ['Soarele strălucește.', 'Die Sonne scheint.'],
+      ['Mâine va ninge.', 'Morgen schneit es.'],
+      ['Este foarte cald azi.', 'Heute ist es sehr warm.'],
+      ['Bate vântul.', 'Es ist windig.'],
+      ['Cerul este albastru.', 'Der Himmel ist blau.'],
+      ['Îmi place vara.', 'Ich mag den Sommer.'],
+      ['Iarna este rece.', 'Der Winter ist kalt.'],
+      ['Ce vreme frumoasă!', 'Was fur ein schones Wetter!'],
+    ],
+  },
+  {
+    title: 'Călătorii',
+    icon: '🧳',
+    description: 'Vacanță și drumuri',
+    items: [
+      ['Merg în vacanță.', 'Ich fahre in den Urlaub.'],
+      ['Rezerv un hotel.', 'Ich buche ein Hotel.'],
+      ['Unde este aeroportul?', 'Wo ist der Flughafen?'],
+      ['Călătoresc cu trenul.', 'Ich reise mit dem Zug.'],
+      ['Îmi place să văd orașe noi.', 'Ich sehe gern neue Stadte.'],
+      ['Bagajul meu este greu.', 'Mein Koffer ist schwer.'],
+      ['Vreau un bilet spre Berlin.', 'Ich mochte ein Ticket nach Berlin.'],
+      ['Vacanța a fost minunată.', 'Der Urlaub war wunderbar.'],
+      ['Fac o poză.', 'Ich mache ein Foto.'],
+      ['Călătoresc cu familia.', 'Ich reise mit meiner Familie.'],
+    ],
+  },
+  {
+    title: 'La muncă',
+    icon: '💼',
+    description: 'Birou, colegi, program',
+    items: [
+      ['Lucrez de acasă.', 'Ich arbeite von zu Hause.'],
+      ['Am o ședință astăzi.', 'Ich habe heute ein Meeting.'],
+      ['Îmi place munca mea.', 'Ich mag meine Arbeit.'],
+      ['Încep la ora nouă.', 'Ich fange um neun an.'],
+      ['Scriu un e-mail.', 'Ich schreibe eine E-Mail.'],
+      ['Colegii mei sunt drăguți.', 'Meine Kollegen sind nett.'],
+      ['Astăzi am mult de lucru.', 'Heute habe ich viel zu tun.'],
+      ['Fac o pauză.', 'Ich mache eine Pause.'],
+      ['Termin la ora cinci.', 'Ich hore um funf auf.'],
+      ['Merg la birou.', 'Ich gehe ins Buro.'],
+    ],
+  },
+  {
+    title: 'Treburi casnice',
+    icon: '🧹',
+    description: 'Curățenie și ordine',
+    items: [
+      ['Spăl vasele.', 'Ich spule das Geschirr.'],
+      ['Fac patul.', 'Ich mache das Bett.'],
+      ['Fac curat în bucătărie.', 'Ich putze die Kuche.'],
+      ['Spăl rufele.', 'Ich wasche die Wasche.'],
+      ['Gătesc pentru familie.', 'Ich koche fur die Familie.'],
+      ['Duc gunoiul afară.', 'Ich bringe den Mull raus.'],
+      ['Curăț podeaua.', 'Ich putze den Boden.'],
+      ['Ud florile.', 'Ich giesse die Blumen.'],
+      ['Casa este curată acum.', 'Das Haus ist jetzt sauber.'],
+      ['Am nevoie de ajutor.', 'Ich brauche Hilfe.'],
+    ],
+  },
+  {
+    title: 'Haine și mărimi',
+    icon: '🛍️',
+    description: 'Ce porți și ce cumperi',
+    items: [
+      ['Port o rochie roșie.', 'Ich trage ein rotes Kleid.'],
+      ['Îmi cumpăr pantofi noi.', 'Ich kaufe neue Schuhe.'],
+      ['Această jachetă este frumoasă.', 'Diese Jacke ist schon.'],
+      ['Ce mărime aveți?', 'Welche Grosse haben Sie?'],
+      ['Pot să probez asta?', 'Kann ich das anprobieren?'],
+      ['Cămașa este prea mare.', 'Das Hemd ist zu gross.'],
+      ['Îmi plac pantalonii aceștia.', 'Diese Hose gefallt mir.'],
+      ['Caut o pălărie.', 'Ich suche einen Hut.'],
+      ['Culoarea este foarte frumoasă.', 'Die Farbe ist sehr schon.'],
+      ['Cât costă această jachetă?', 'Wie viel kostet diese Jacke?'],
+    ],
+  },
+];
+
+// 5 serii noi (50 unități) din propozițiile NOI, același tip sentenceBuild.
+export function buildAboutMeExtraUnits(count = 50, prefix = 'dmg2') {
+  return buildSeriesFrom(NEW_THEMES, count, prefix);
 }

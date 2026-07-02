@@ -88,13 +88,19 @@ export function renderSection(navigate, params) {
         if (reached(s)) {
           const slice = units.slice(s * size, s * size + size);
           const doneCount = slice.filter(u => isLessonCompleted(u.id)).length;
+          // Fiecare serie se poate restrânge (dropdown). Preferință persistată.
+          const collapsed = localStorage.getItem(`ui_series_${section.id}_${s}`) === '1';
           blocks.push(`
-            <div class="series-header animate-fadeInUp" style="animation-delay: ${0.05 + delayIdx * 0.04}s">
+            <button class="series-header series-toggle animate-fadeInUp" data-series="${s}"
+                    aria-expanded="${!collapsed}" style="animation-delay: ${0.05 + delayIdx * 0.04}s">
               <span class="series-header-title">Seria ${s + 1} / ${seriesCount}</span>
-              <span class="series-header-progress">${doneCount}/${slice.length}</span>
-            </div>
+              <span class="series-header-right">
+                <span class="series-header-progress">${doneCount}/${slice.length}</span>
+                <span class="series-caret">${collapsed ? '▾' : '▴'}</span>
+              </span>
+            </button>
           `);
-          blocks.push(`<div class="lesson-map">${slice
+          blocks.push(`<div class="lesson-map series-units ${collapsed ? 'is-collapsed' : ''}" data-series="${s}">${slice
             .map((unit, i) => nodeHTML(unit, s * size + i, delayIdx + i))
             .join('')}</div>`);
           delayIdx += slice.length + 1;
@@ -160,6 +166,15 @@ export function renderSection(navigate, params) {
         padding-bottom: var(--space-xs);
         border-bottom: 2px solid var(--border-color);
       }
+      .series-toggle {
+        width: 100%; background: none; border: none;
+        border-bottom: 2px solid var(--border-color);
+        cursor: pointer; font-family: var(--font-family); color: inherit;
+      }
+      .series-toggle:active { opacity: 0.7; }
+      .series-header-right { display: flex; align-items: center; gap: var(--space-sm); }
+      .series-caret { font-size: var(--font-size-md); color: var(--text-secondary); }
+      .series-units.is-collapsed { display: none; }
       .series-header-title {
         font-size: var(--font-size-sm); font-weight: var(--font-weight-extrabold);
         color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;
@@ -188,6 +203,20 @@ export function attachSectionEvents(navigate, params) {
   if (!section) return;
 
   document.getElementById('btn-back-section')?.addEventListener('click', () => navigate('home'));
+
+  // Restrângere/expandare serie (dropdown), preferință persistată per secțiune
+  document.querySelectorAll('.series-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const s = btn.dataset.series;
+      const map = document.querySelector(`.series-units[data-series="${s}"]`);
+      if (!map) return;
+      const nowCollapsed = map.classList.toggle('is-collapsed');
+      localStorage.setItem(`ui_series_${section.id}_${s}`, nowCollapsed ? '1' : '0');
+      btn.setAttribute('aria-expanded', String(!nowCollapsed));
+      const caret = btn.querySelector('.series-caret');
+      if (caret) caret.textContent = nowCollapsed ? '▾' : '▴';
+    });
+  });
 
   // Atașăm ambele tipuri de handler — o secțiune poate avea și teme, și unități.
   document.querySelectorAll('.theme-card').forEach(card => {
