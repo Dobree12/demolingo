@@ -8,7 +8,18 @@
 // aplicația, iar conținutul nu se reamestecă la fiecare randare.
 
 import { hasEmoji } from './wordAssets.js';
-import { hasGermanEntry } from './dictionary.js';
+import { hasGermanEntry, findByDe } from './dictionary.js';
+
+// Etichete (emoji + română) pentru coșurile din sortCategories, pe id-ul de
+// categorie din dicționar. Categoriile fără etichetă tot pot apărea (label = id).
+const CATEGORY_LABELS = {
+  salutari: '👋 Salutări', expresii: '💬 Expresii', adjective: '📏 Adjective',
+  numere: '🔢 Numere', natura: '🌳 Natură', locuri: '📍 Locuri', corp: '🧍 Corp',
+  animale: '🐾 Animale', timp: '⏰ Timp', luni: '📅 Luni', casa: '🏠 Casă',
+  haine: '👕 Haine', familie: '👪 Familie', culori: '🎨 Culori', vreme: '🌤️ Vreme',
+  zile: '📆 Zile', meserii: '💼 Meserii', bauturi: '🥤 Băuturi',
+  transport: '🚗 Transport', tari: '🌍 Țări', mancare: '🍎 Mâncare', verbe: '🏃 Verbe',
+};
 
 // --- RNG seeded (fnv1a + mulberry32) ---
 function fnv1a(str) {
@@ -131,6 +142,52 @@ function picturePick(word, pool, rnd) {
   };
 }
 
+// Auzi cuvântul german (TTS), alegi sensul românesc — fără tastare.
+function listenChoice(word, pool, rnd) {
+  const d = distractors(word, pool, 'ro', 3, rnd);
+  if (d.length < 3) return null;
+  return {
+    type: 'listenChoice',
+    word: displayDe(word),
+    correct: word.ro,
+    options: shuffle([word.ro, ...d.map(w => w.ro)], rnd),
+  };
+}
+
+// „<cuvânt german> = <traducere>?" → Adevărat / Fals (jumătate din cazuri false).
+function trueFalse(word, pool, rnd) {
+  const makeTrue = rnd() < 0.5;
+  if (makeTrue) {
+    return { type: 'trueFalse', de: displayDe(word), ro: word.ro, correct: word.ro, isTrue: true };
+  }
+  const d = distractors(word, pool, 'ro', 1, rnd);
+  if (!d.length) return null;
+  return { type: 'trueFalse', de: displayDe(word), ro: d[0].ro, correct: word.ro, isTrue: false };
+}
+
+// Sortare pe 2 categorii — grupează cuvintele din pool după categoria lor din
+// dicționar și alege 2 categorii cu suficiente cuvinte. Ignoră `word` (produce
+// un set „batch"); varietatea vine din starea rnd.
+function sortCategories(_word, pool, rnd) {
+  const byCat = new Map();
+  for (const w of pool) {
+    const cat = findByDe(w.de)?.category;
+    if (!cat || cat === 'functionale') continue; // funcționalele nu se sortează intuitiv
+    if (!byCat.has(cat)) byCat.set(cat, []);
+    byCat.get(cat).push(w);
+  }
+  const eligible = shuffle([...byCat.keys()].filter(c => byCat.get(c).length >= 2), rnd);
+  if (eligible.length < 2) return null;
+  const chosen = eligible.slice(0, 2);
+  const categories = chosen.map(c => ({ id: c, label: CATEGORY_LABELS[c] || c }));
+  const items = [];
+  for (const c of chosen) {
+    for (const w of sample(byCat.get(c), 3, rnd)) items.push({ de: displayDe(w), cat: c });
+  }
+  if (items.length < 4) return null;
+  return { type: 'sortCategories', categories, items: shuffle(items, rnd) };
+}
+
 const BUILDERS = {
   mcDeRo,
   mcRoDe,
@@ -140,13 +197,16 @@ const BUILDERS = {
   speak,
   match,
   picturePick,
+  listenChoice,
+  trueFalse,
+  sortCategories,
 };
 
 // Seturi de tipuri pe nivel de dificultate (pentru seriile de antrenament)
 export const TYPE_SETS = {
-  easy: ['picturePick', 'mcDeRo', 'mcRoDe', 'match'],
-  medium: ['mcDeRo', 'mcRoDe', 'translateDeRo', 'match', 'listen'],
-  hard: ['translateRoDe', 'translateDeRo', 'listen', 'speak', 'match', 'mcRoDe'],
+  easy: ['picturePick', 'mcDeRo', 'mcRoDe', 'match', 'listenChoice', 'trueFalse'],
+  medium: ['mcDeRo', 'mcRoDe', 'translateDeRo', 'match', 'listen', 'listenChoice', 'trueFalse', 'sortCategories'],
+  hard: ['translateRoDe', 'translateDeRo', 'listen', 'speak', 'match', 'mcRoDe', 'trueFalse', 'sortCategories'],
 };
 
 // Generează `count` exerciții din `words`, cu distractori din `pool`.
@@ -180,6 +240,7 @@ export function generateExercises({ words, pool, count, seed, types }) {
 const AUGMENT_TYPES = [
   'mcDeRo', 'mcRoDe', 'translateDeRo', 'translateRoDe',
   'listen', 'speak', 'match', 'picturePick',
+  'listenChoice', 'trueFalse', 'sortCategories',
 ];
 
 // Extinde lista de exerciții autoreate până la ~factor× volum, adăugând

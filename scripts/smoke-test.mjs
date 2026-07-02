@@ -34,8 +34,8 @@ try {
 
   // 4. Secțiunile apar pe home
   const sectionCards = await page.$$('.home-section-card');
-  if (sectionCards.length !== 3) throw new Error(`${sectionCards.length} secțiuni în loc de 3`);
-  ok('3 secțiuni pe home');
+  if (sectionCards.length !== 4) throw new Error(`${sectionCards.length} secțiuni în loc de 4`);
+  ok('4 secțiuni pe home');
 
   // 5. Secțiune → unitate → exercițiu picturePick
   await page.click('.home-section-card[data-section-id="cuvinte-uzuale"]');
@@ -72,6 +72,9 @@ try {
   await page.waitForSelector('.home-screen', { timeout: 5000 });
 
   // 9. Hint la PRIMA greșeală + skip la final (lecție clasică, translate)
+  // Lecțiile de bază sunt restrânse implicit — deschidem blocul întâi.
+  await page.click('#btn-toggle-classic');
+  await page.waitForSelector('#classic-map .lesson-node[id="lesson-salutari"]', { state: 'visible', timeout: 5000 });
   await page.click('#lesson-salutari');
   await page.waitForSelector('.exercise-area', { timeout: 5000 });
   // sari peste exerciții până găsim un input text (multiChoice-urile le răspundem greșit nu putem — răspundem corect nu știm; folosim unitatea ps-1? simplu: căutăm direct)

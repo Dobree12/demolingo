@@ -8,6 +8,7 @@
 
 import { augmentExercises } from './generator.js';
 import { buildVocabUnits, buildSentenceUnits, buildVisualUnits } from './sectionContent.js';
+import { buildAboutMeUnits, buildAboutMeSeriesUnits } from './aboutMeContent.js';
 
 export const sections = [
   // ------------------------------------------------
@@ -247,7 +248,89 @@ export const sections = [
   },
 
   // ------------------------------------------------
-  // 3. IMAGINI ȘI CUVINTE — galerii tematice (stil carduri cu emoji)
+  // 3. DESPRE MINE — propoziții de prezentare (construiește în germană)
+  // ------------------------------------------------
+  // Exercițiile sentenceBuild sunt autoreate și personalizate; sunt exceptate
+  // de la garda de vocabular (verify-vocab.mjs), deci pot folosi cuvinte din
+  // afara dicționarului. Text german în ASCII (a/o/u/ss).
+  {
+    id: 'despre-mine',
+    title: 'Despre mine',
+    icon: '📝',
+    description: 'Prezintă-te și vorbește despre viața de zi cu zi',
+    kind: 'units',
+    series: true,
+    seriesSize: 10,
+    units: [
+      {
+        id: 'dm-1',
+        title: 'Cine sunt eu',
+        icon: '🙋‍♀️',
+        description: 'Nume, vârstă, de unde vii',
+        exercises: [
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Bună, mă numesc Paula.',
+            answer: 'Hallo, ich heisse Paula.',
+            bank: ['Hallo', 'ich', 'heisse', 'Paula', 'bin', 'danke'],
+          },
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Am 49 de ani.',
+            answer: 'Ich bin 49 Jahre alt.',
+            bank: ['Ich', 'bin', '49', 'Jahre', 'alt', 'heisse', 'und'],
+          },
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Vin din România.',
+            answer: 'Ich komme aus Rumanien.',
+            bank: ['Ich', 'komme', 'aus', 'Rumanien', 'Deutschland', 'bin'],
+          },
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Locuiesc în Germania.',
+            answer: 'Ich wohne in Deutschland.',
+            bank: ['Ich', 'wohne', 'in', 'Deutschland', 'komme', 'aus'],
+          },
+        ],
+      },
+      {
+        id: 'dm-2',
+        title: 'Ce îmi place',
+        icon: '💚',
+        description: 'Pasiuni, hobby-uri, limbi',
+        exercises: [
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Îmi place să merg la sală.',
+            answer: 'Ich gehe gern ins Fitnessstudio.',
+            bank: ['Ich', 'gehe', 'gern', 'ins', 'Fitnessstudio', 'und', 'aus'],
+          },
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Iubesc natura.',
+            answer: 'Ich liebe die Natur.',
+            bank: ['Ich', 'liebe', 'die', 'Natur', 'Sonne', 'und'],
+          },
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Îmi place să ies în natură.',
+            answer: 'Ich gehe gern in die Natur.',
+            bank: ['Ich', 'gehe', 'gern', 'in', 'die', 'Natur', 'ins'],
+          },
+          {
+            type: 'sentenceBuild',
+            promptRo: 'Vorbesc puțină germană.',
+            answer: 'Ich spreche ein bisschen Deutsch.',
+            bank: ['Ich', 'spreche', 'ein', 'bisschen', 'Deutsch', 'und', 'gern'],
+          },
+        ],
+      },
+    ],
+  },
+
+  // ------------------------------------------------
+  // 4. IMAGINI ȘI CUVINTE — galerii tematice (stil carduri cu emoji)
   // ------------------------------------------------
   {
     id: 'imagini-cuvinte',
@@ -446,6 +529,8 @@ export const sections = [
 // determinist din vocabular/propoziții (vezi sectionContent.js).
 getSectionById('cuvinte-uzuale').units.push(...buildVocabUnits(97, 'cug'));      // 3 + 97 = 100
 getSectionById('propozitii-scurte').units.push(...buildSentenceUnits(98, 'psg')); // 2 + 98 = 100
+getSectionById('despre-mine').units.push(...buildAboutMeUnits('dm', 3));           // 2 + 10 teme (×10 = 100 propoziții)
+getSectionById('despre-mine').units.push(...buildAboutMeSeriesUnits(100, 'dmg'));  // + 100 unități pe serii (reutilizează propozițiile)
 getSectionById('imagini-cuvinte').units = buildVisualUnits(100, 'img');           // 100 (+ 12 teme explorator)
 
 // 10x volum doar la unitățile autoreate din „cuvinte uzuale"; cele generate au

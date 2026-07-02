@@ -22,6 +22,10 @@ import { renderSpeak } from '../exercises/speak.js';
 import { renderWordBank } from '../exercises/wordBank.js';
 import { renderPicturePick } from '../exercises/picturePick.js';
 import { renderDialogue } from '../exercises/dialogue.js';
+import { renderListenChoice } from '../exercises/listenChoice.js';
+import { renderTrueFalse } from '../exercises/trueFalse.js';
+import { renderSortCategories } from '../exercises/sortCategories.js';
+import { renderSentenceBuild } from '../exercises/sentenceBuild.js';
 
 let currentExerciseIndex = 0;
 let correctCount = 0;
@@ -68,6 +72,10 @@ function renderLessonUI(navigate) {
     case 'wordBank': exerciseHTML = renderWordBank(exercise); break;
     case 'picturePick': exerciseHTML = renderPicturePick(exercise); break;
     case 'dialogue': exerciseHTML = renderDialogue(exercise); break;
+    case 'listenChoice': exerciseHTML = renderListenChoice(exercise); break;
+    case 'trueFalse': exerciseHTML = renderTrueFalse(exercise); break;
+    case 'sortCategories': exerciseHTML = renderSortCategories(exercise); break;
+    case 'sentenceBuild': exerciseHTML = renderSentenceBuild(exercise); break;
     default: exerciseHTML = `<p>Tip necunoscut: ${exercise.type}</p>`;
   }
 
@@ -153,7 +161,170 @@ function attachExerciseEvents(exercise, navigate, params) {
     case 'dialogue':
       attachDialogueEvents(exercise, navigate, params);
       break;
+    case 'listenChoice':
+      attachListenChoiceEvents(exercise, navigate, params);
+      break;
+    case 'trueFalse':
+      attachTrueFalseEvents(exercise, navigate, params);
+      break;
+    case 'sortCategories':
+      attachSortCategoriesEvents(exercise, navigate, params);
+      break;
+    case 'sentenceBuild':
+      attachSentenceBuildEvents(exercise, navigate, params);
+      break;
   }
+}
+
+function attachListenChoiceEvents(exercise, navigate, params) {
+  document.getElementById('btn-lc-speak')?.addEventListener('click', () => speak(exercise.word));
+  setTimeout(() => speak(exercise.word), 400);
+
+  document.querySelectorAll('.lc-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (exerciseLocked) return;
+      const selected = btn.dataset.value;
+      const isCorrect = selected === exercise.correct;
+      document.querySelectorAll('.lc-option').forEach(b => {
+        b.classList.add('mc-disabled');
+        if (b.dataset.value === exercise.correct) b.classList.add('mc-correct');
+        if (b.dataset.value === selected && !isCorrect) b.classList.add('mc-wrong');
+      });
+      handleAnswer(isCorrect, exercise.correct, navigate, params);
+    });
+  });
+}
+
+function attachTrueFalseEvents(exercise, navigate, params) {
+  document.getElementById('btn-tf-speak')?.addEventListener('click', () => speak(exercise.de));
+  setTimeout(() => speak(exercise.de), 400);
+
+  const correctLabel = exercise.isTrue
+    ? 'Adevărat ✅'
+    : `Fals — ${exercise.de} = ${exercise.correct}`;
+
+  document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (exerciseLocked) return;
+      const choseTrue = btn.dataset.value === 'true';
+      const isCorrect = choseTrue === exercise.isTrue;
+      document.querySelectorAll('.tf-btn').forEach(b => {
+        b.classList.add('mc-disabled');
+        const bTrue = b.dataset.value === 'true';
+        if (bTrue === exercise.isTrue) b.classList.add('mc-correct');
+        if (b === btn && !isCorrect) b.classList.add('mc-wrong');
+      });
+      handleAnswer(isCorrect, correctLabel, navigate, params);
+    });
+  });
+}
+
+function attachSortCategoriesEvents(exercise, navigate, params) {
+  const total = exercise.items.length;
+  let placed = 0;
+  let selectedItem = null; // { el, de, cat }
+
+  const clearSelection = () => {
+    document.querySelectorAll('.sc-item.sc-selected').forEach(i => i.classList.remove('sc-selected'));
+    document.querySelectorAll('.sc-bucket-active').forEach(b => b.classList.remove('sc-bucket-active'));
+    selectedItem = null;
+  };
+
+  document.querySelectorAll('.sc-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (exerciseLocked || item.classList.contains('sc-placed')) return;
+      if (selectedItem?.el === item) { clearSelection(); return; }
+      clearSelection();
+      item.classList.add('sc-selected');
+      selectedItem = { el: item, de: item.dataset.de, cat: item.dataset.cat };
+      document.querySelectorAll('.sc-bucket').forEach(b => b.classList.add('sc-bucket-active'));
+    });
+  });
+
+  document.querySelectorAll('.sc-bucket').forEach(bucket => {
+    bucket.addEventListener('click', () => {
+      if (exerciseLocked || !selectedItem) return;
+      const bucketCat = bucket.dataset.cat;
+      if (bucketCat === selectedItem.cat) {
+        // corect: mută piesa în coș
+        const chip = document.createElement('span');
+        chip.className = 'sc-chip';
+        chip.textContent = selectedItem.de;
+        bucket.querySelector('.sc-bucket-drop')?.appendChild(chip);
+        selectedItem.el.classList.add('sc-placed');
+        playSound('click');
+        clearSelection();
+        placed++;
+        if (placed === total) {
+          setTimeout(() => handleAnswer(true, '', navigate, params), 400);
+        }
+      } else {
+        // greșit: doar scutură coșul (ca la `match`, fără modal de indiciu)
+        bucket.classList.add('sc-bucket-wrong');
+        playSound('wrong');
+        setTimeout(() => bucket.classList.remove('sc-bucket-wrong'), 600);
+      }
+    });
+  });
+}
+
+function attachSentenceBuildEvents(exercise, navigate, params) {
+  const answerRow = document.getElementById('sb-answer');
+  const bank = document.getElementById('sb-bank');
+  const checkBtn = document.getElementById('btn-sb-check');
+  const clearBtn = document.getElementById('btn-sb-clear');
+  const placeholder = answerRow?.querySelector('.sb-placeholder');
+
+  document.getElementById('btn-sb-speak')?.addEventListener('click', () => speak(exercise.answer));
+
+  const selected = [];
+
+  const refreshState = () => {
+    if (placeholder) placeholder.style.display = selected.length === 0 ? '' : 'none';
+    if (checkBtn) checkBtn.disabled = selected.length === 0;
+  };
+
+  const removeChip = (chip, tileEl) => {
+    if (exerciseLocked) return;
+    const idx = selected.findIndex(s => s.tileEl === tileEl);
+    if (idx >= 0) selected.splice(idx, 1);
+    chip.remove();
+    tileEl.classList.remove('sb-used');
+    refreshState();
+  };
+
+  const addChip = (token, tileEl) => {
+    if (exerciseLocked) return;
+    selected.push({ token, tileEl });
+    tileEl.classList.add('sb-used');
+    const chip = document.createElement('button');
+    chip.className = 'sb-chip animate-fadeInUp';
+    chip.textContent = token;
+    chip.addEventListener('click', () => removeChip(chip, tileEl));
+    answerRow?.appendChild(chip);
+    refreshState();
+  };
+
+  bank?.querySelectorAll('.sb-tile').forEach(tile => {
+    tile.addEventListener('click', () => addChip(tile.dataset.token, tile));
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    if (exerciseLocked) return;
+    selected.splice(0).forEach(s => s.tileEl.classList.remove('sb-used'));
+    answerRow?.querySelectorAll('.sb-chip').forEach(c => c.remove());
+    refreshState();
+  });
+
+  checkBtn?.addEventListener('click', () => {
+    if (exerciseLocked || selected.length === 0) return;
+    const built = selected.map(s => s.token).join(' ');
+    if (normalizeAnswer(built) === normalizeAnswer(exercise.answer)) {
+      handleAnswer(true, exercise.answer, navigate, params);
+    } else {
+      handleWrongAttempt(exercise, exercise.answer, navigate, params);
+    }
+  });
 }
 
 function attachWordBankEvents(exercise, navigate, params) {

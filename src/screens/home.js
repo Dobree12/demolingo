@@ -73,7 +73,21 @@ export function renderHome(navigate) {
   const classicLessons = lessons.filter(l => !l.extra);
   const extra = lessons.filter(l => l.extra);
 
-  let lessonMapHTML = `<div class="lesson-map">${classicLessons.map((l, i) => nodeHTML(l, i)).join('')}</div>`;
+  // Lecțiile de bază sunt restrânse implicit (preferință UI persistată global).
+  // Un buton le arată/ascunde — nu se șterge nimic.
+  const classicOpen = localStorage.getItem('ui_classicOpen') === '1';
+  const classicDone = classicLessons.filter(l => isLessonCompleted(l.id)).length;
+
+  let lessonMapHTML = `
+    <button class="lessons-collapse-btn" id="btn-toggle-classic" aria-expanded="${classicOpen}">
+      <span class="lessons-collapse-label">📖 Lecții de bază</span>
+      <span class="lessons-collapse-meta">
+        <span class="lessons-collapse-count">${classicDone}/${classicLessons.length}</span>
+        <span class="lessons-collapse-caret">${classicOpen ? '▴' : '▾'}</span>
+      </span>
+    </button>
+    <div class="lesson-map classic-map ${classicOpen ? '' : 'is-collapsed'}" id="classic-map">${classicLessons.map((l, i) => nodeHTML(l, i)).join('')}</div>
+  `;
 
   if (extra.length) {
     const size = 10;
@@ -275,6 +289,19 @@ export function attachHomeEvents(navigate) {
     }
   });
   
+  // Toggle „Lecții de bază" — arată/ascunde blocul clasic, persistă preferința
+  const classicToggle = document.getElementById('btn-toggle-classic');
+  classicToggle?.addEventListener('click', () => {
+    const map = document.getElementById('classic-map');
+    if (!map) return;
+    const nowCollapsed = map.classList.toggle('is-collapsed');
+    const open = !nowCollapsed;
+    localStorage.setItem('ui_classicOpen', open ? '1' : '0');
+    classicToggle.setAttribute('aria-expanded', String(open));
+    const caret = classicToggle.querySelector('.lessons-collapse-caret');
+    if (caret) caret.textContent = open ? '▴' : '▾';
+  });
+
   // Settings
   document.getElementById('btn-settings')?.addEventListener('click', () => navigate('settings'));
 

@@ -115,6 +115,21 @@ function checkExercise(ex, context) {
       }
       break;
     }
+    case 'listenChoice':
+      // options/correct sunt românești; doar cuvântul redat e german
+      check(ex.word, `${context} › word`);
+      break;
+    case 'trueFalse':
+      // ro/correct sunt românești; doar cuvântul afișat e german
+      check(ex.de, `${context} › de`);
+      break;
+    case 'sortCategories':
+      ex.items.forEach((it, i) => check(it.de, `${context} › item #${i + 1}`));
+      break;
+    case 'sentenceBuild':
+      // Propoziții de prezentare autoreate — exceptate intenționat de la garda
+      // de vocabular (pot folosi cuvinte din afara dicționarului).
+      break;
     case 'dialogue': {
       ex.lines.forEach((line, i) => {
         if (line.de) check(line.de, `${context} › line #${i + 1}`);
