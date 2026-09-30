@@ -3,7 +3,8 @@
 // ============================================
 
 import { loadState } from '../engine/storage.js';
-import { getWordsDueForReview, getReviewStats } from '../engine/srs.js';
+import { getWordsDueForReview, getReviewStats, buildReviewExercises } from '../engine/srs.js';
+import { getMistakeExercises } from '../engine/progress.js';
 import { speak } from '../engine/audio.js';
 import { renderMascot } from '../components/mascot.js';
 
@@ -50,6 +51,15 @@ export function renderPractice(navigate) {
           </div>
         </div>
         
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-xl);">
+          ${hasDueWords ? `
+            <button class="btn btn-primary btn-full" id="btn-start-review">▶ Începe repetiția (${Math.min(dueWords.length, 14)} cuvinte)</button>
+          ` : ''}
+          ${hasMistakes ? `
+            <button class="btn btn-accent btn-full" id="btn-fix-mistakes">🛠️ Repară greșelile (${Math.min(mistakes.length, 14)})</button>
+          ` : ''}
+        </div>
+
         ${hasDueWords ? `
           <h2 style="font-size: var(--font-size-lg); font-weight: 800; margin-bottom: var(--space-md);">
             📖 Cuvinte de repetat (${dueWords.length})
@@ -99,6 +109,16 @@ export function renderPractice(navigate) {
 export function attachPracticeEvents(navigate) {
   document.getElementById('btn-back-practice')?.addEventListener('click', () => navigate('home'));
   document.getElementById('btn-practice-home')?.addEventListener('click', () => navigate('home'));
+
+  document.getElementById('btn-start-review')?.addEventListener('click', () => {
+    const exercises = buildReviewExercises();
+    if (exercises.length) navigate('lesson', { exercises, title: 'Repetiție', icon: '🔄', unitId: 'review' });
+  });
+
+  document.getElementById('btn-fix-mistakes')?.addEventListener('click', () => {
+    const exercises = getMistakeExercises();
+    if (exercises.length) navigate('lesson', { exercises, title: 'Repară greșelile', icon: '🛠️', unitId: 'mistakes' });
+  });
   
   // Speak buttons
   document.querySelectorAll('.practice-speak-btn').forEach(btn => {

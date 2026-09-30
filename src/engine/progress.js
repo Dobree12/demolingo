@@ -4,6 +4,27 @@
 
 import { loadState, updateState } from './storage.js';
 
+// --- Jurnal zilnic (pentru pagina de urmărire) ---
+// activityLog: { 'AAAA-LL-ZZ': { minutes, xp, answers, correct, lessons } }
+const ACTIVITY_DAYS_KEPT = 180;
+
+export function todayKey(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// Întoarce un activityLog nou cu `delta` adunat la ziua curentă
+function withActivity(state, delta) {
+  const log = { ...(state.activityLog || {}) };
+  const key = todayKey();
+  const day = { ...(log[key] || {}) };
+  for (const [k, v] of Object.entries(delta)) day[k] = Math.round(((day[k] || 0) + v) * 10) / 10;
+  log[key] = day;
+  const keys = Object.keys(log).sort();
+  for (const old of keys.slice(0, Math.max(0, keys.length - ACTIVITY_DAYS_KEPT))) delete log[old];
+  return log;
+}
+
 // --- XP & Levels ---
 const XP_PER_CORRECT = 10;
 const XP_BONUS_PERFECT = 50;
@@ -83,7 +104,7 @@ export function addXP(amount) {
   const newLevel = getLevelForXP(newXP);
   const leveledUp = newLevel > oldLevel;
   
-  updateState({ xp: newXP, level: newLevel });
+  updateState({ xp: newXP, level: newLevel, activityLog: withActivity(state, { xp: amount }) });
   
   return { xp: newXP, level: newLevel, leveledUp, xpGained: amount };
 }
@@ -127,9 +148,10 @@ export function updateDailyTime(minutes) {
   const state = loadState();
   const newMinutes = state.dailyMinutesToday + minutes;
   const completed = newMinutes >= state.dailyGoalMinutes;
-  updateState({ 
-    dailyMinutesToday: newMinutes, 
-    dailyGoalCompleted: completed 
+  updateState({
+    dailyMinutesToday: newMinutes,
+    dailyGoalCompleted: completed,
+    activityLog: withActivity(state, { minutes }),
   });
   return { minutes: newMinutes, goal: state.dailyGoalMinutes, completed };
 }
@@ -157,7 +179,7 @@ export function completeLesson(lessonId, score, totalExercises) {
   
   const totalLessonsCompleted = state.totalLessonsCompleted + (isNew ? 1 : 0);
   
-  updateState({ lessonsCompleted, totalLessonsCompleted });
+  updateState({ lessonsCompleted, totalLessonsCompleted, activityLog: withActivity(state, { lessons: 1 }) });
   
   // Add bonus XP
   let bonusXP = XP_BONUS_LESSON_COMPLETE;
@@ -190,21 +212,41 @@ export function addWordLearned(word) {
   }
 }
 
+// Identitatea unei greșeli = conținutul exercițiului (fără marcajul `gen`)
+function exerciseKey(exercise) {
+  const { gen, ...rest } = exercise || {};
+  return JSON.stringify(rest);
+}
+
 export function addMistake(mistake) {
   const state = loadState();
-  const mistakes = [mistake, ...state.mistakes].slice(0, 50); // keep last 50
+  const key = exerciseKey(mistake.exercise);
+  const others = state.mistakes.filter(m => exerciseKey(m.exercise) !== key);
+  const mistakes = [mistake, ...others].slice(0, 50); // keep last 50
   updateState({ mistakes, totalWrong: state.totalWrong + 1 });
+}
+
+// Exercițiul a fost rezolvat din prima → greșeala e reparată
+export function removeMistake(exercise) {
+  const state = loadState();
+  const key = exerciseKey(exercise);
+  const mistakes = state.mistakes.filter(m => exerciseKey(m.exercise) !== key);
+  if (mistakes.length !== state.mistakes.length) updateState({ mistakes });
+}
+
+export function getMistakeExercises(max = 14) {
+  return loadState().mistakes.slice(0, max).map(m => m.exercise);
 }
 
 export function recordCorrect() {
   const state = loadState();
-  updateState({ totalCorrect: state.totalCorrect + 1 });
+  updateState({ totalCorrect: state.totalCorrect + 1, activityLog: withActivity(state, { correct: 1 }) });
 }
 
 // O „încercare" = orice verificare de răspuns, corectă sau greșită
 export function recordAttempt() {
   const state = loadState();
-  updateState({ totalAttempts: (state.totalAttempts || 0) + 1 });
+  updateState({ totalAttempts: (state.totalAttempts || 0) + 1, activityLog: withActivity(state, { answers: 1 }) });
 }
 
 // --- Badges ---

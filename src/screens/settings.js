@@ -5,6 +5,9 @@
 import { loadState, updateState, resetState, getActiveUser, deleteUser } from '../engine/storage.js';
 import { setDailyGoal } from '../engine/progress.js';
 import { renderMascot } from '../components/mascot.js';
+import { showToast } from '../components/toast.js';
+import { downloadProfile, importAndGoHome } from '../utils/backup.js';
+import { getSyncStatus, enableSync, disableSync, pushNow, restoreFromServer } from '../engine/sync.js';
 
 const GOAL_OPTIONS = [
   { value: 5, label: '5 min', emoji: '🌱', desc: 'Relaxat' },
@@ -12,6 +15,59 @@ const GOAL_OPTIONS = [
   { value: 15, label: '15 min', emoji: '💪', desc: 'Serios' },
   { value: 20, label: '20 min', emoji: '🔥', desc: 'Intens' },
 ];
+
+const SYNC_ERRORS = {
+  offline: 'Nu există conexiune — se trimite automat mai târziu.',
+  bad_key: 'Cheia nu mai e acceptată de server.',
+  regression: 'Serverul are mai mult progres decât acest calculator.',
+  not_configured: 'Serverul nu este configurat încă.',
+};
+
+function formatTime(iso) {
+  if (!iso) return 'niciodată';
+  return new Date(iso).toLocaleString('ro-RO', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function renderSyncBlock() {
+  const s = getSyncStatus();
+  const user = getActiveUser();
+  const muted = 'font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--space-md);';
+
+  if (!s) {
+    return `
+      <p style="${muted}">
+        Trimite progresul pe server, ca să poată fi urmărit de la distanță. Activează doar pe calculatorul pe care se învață.
+      </p>
+      <input type="password" id="sync-key-input" class="exercise-input" placeholder="Cheia de sincronizare"
+             autocomplete="off" style="width: 100%; margin-bottom: var(--space-sm);">
+      <button class="btn btn-primary btn-full" id="btn-sync-enable">Activează sincronizarea</button>
+    `;
+  }
+
+  if (!user || s.profileId !== user.id) {
+    return `<p style="${muted}">Sincronizarea este activă pentru alt profil de pe acest calculator.</p>
+      <button class="btn btn-secondary btn-full" id="btn-sync-disable">Dezactivează</button>`;
+  }
+
+  const error = s.lastError ? `<p style="${muted} color: var(--color-hearts);">⚠️ ${SYNC_ERRORS[s.lastError] || `Eroare: ${s.lastError}`}</p>` : '';
+  const conflict = s.lastError === 'regression' ? `
+    <div class="card" style="margin-bottom: var(--space-sm);">
+      <p style="${muted}">
+        Pe server: ${Math.round(s.conflict?.xp || 0)} XP, ${s.conflict?.totalAttempts || 0} răspunsuri
+        (salvat ${formatTime(s.conflict?.receivedAt)}). Aici: ${loadState().xp} XP.
+      </p>
+      <button class="btn btn-primary btn-full" id="btn-sync-restore" style="margin-bottom: var(--space-sm);">⬇️ Adu progresul de pe server</button>
+      <button class="btn btn-secondary btn-full" id="btn-sync-force">⬆️ Păstrează ce e aici (suprascrie serverul)</button>
+    </div>` : '';
+
+  return `
+    <p style="${muted}">✅ Activă · ultima trimitere: <strong>${formatTime(s.lastSyncAt)}</strong></p>
+    ${error}
+    ${conflict}
+    <button class="btn btn-secondary btn-full" id="btn-sync-now" style="margin-bottom: var(--space-sm);">🔄 Trimite acum</button>
+    <button class="btn btn-secondary btn-full" id="btn-sync-disable">Dezactivează pe acest calculator</button>
+  `;
+}
 
 export function renderSettings(navigate) {
   const state = loadState();
@@ -159,6 +215,30 @@ export function renderSettings(navigate) {
         </button>
       </div>
 
+      <!-- Sincronizare -->
+      <div class="animate-fadeInUp" style="animation-delay: 0.27s; margin-bottom: var(--space-xl);">
+        <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--text-primary); margin-bottom: var(--space-sm);">
+          ☁️ Sincronizare
+        </h2>
+        ${renderSyncBlock()}
+      </div>
+
+      <!-- Backup -->
+      <div class="animate-fadeInUp" style="animation-delay: 0.28s; margin-bottom: var(--space-xl);">
+        <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--text-primary); margin-bottom: var(--space-sm);">
+          💾 Salvează progresul
+        </h2>
+        <p style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--space-md);">
+          Progresul stă doar în acest browser. Descarcă un fișier de rezervă ca să nu-l pierzi sau ca să-l muți pe alt telefon/calculator.
+        </p>
+        <button class="btn btn-secondary btn-full" id="btn-export-profile" style="margin-bottom: var(--space-sm);">
+          ⬇️ Descarcă progresul
+        </button>
+        <button class="btn btn-secondary btn-full" id="btn-import-profile">
+          ⬆️ Încarcă un fișier (profil nou)
+        </button>
+      </div>
+
       <!-- Danger Zone -->
       <div class="animate-fadeInUp" style="animation-delay: 0.3s; margin-bottom: var(--space-xl);">
         <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-hearts); margin-bottom: var(--space-sm);">
@@ -257,6 +337,70 @@ export function attachSettingsEvents(navigate) {
   document.getElementById('btn-change-user')?.addEventListener('click', () => {
     navigate('users');
   });
+
+  // Sincronizare
+  const rerender = () => navigate('settings', {}, { replace: true });
+
+  document.getElementById('btn-sync-enable')?.addEventListener('click', async (e) => {
+    const key = document.getElementById('sync-key-input')?.value.trim();
+    if (!key) return;
+    e.target.disabled = true;
+    try {
+      const result = await enableSync(key);
+      if (result.needsChoice) {
+        const xp = Math.round(result.server.state.xp || 0);
+        if (confirm(`Pe server există deja mai mult progres (${xp} XP). Îl aduc pe acest calculator?\n\nOK = adu de pe server · Anulează = păstrează ce e aici`)) {
+          await restoreFromServer();
+          showToast('Progresul a fost adus de pe server ☁️', 'success');
+        } else {
+          await pushNow({ force: true });
+          showToast('Sincronizare activată ☁️', 'success');
+        }
+      } else {
+        showToast(result.ok ? 'Sincronizare activată ☁️' : 'Activată — se trimite când e conexiune', 'success');
+      }
+      rerender();
+    } catch (err) {
+      showToast(err.message || 'Nu m-am putut conecta la server.', 'error', 4000);
+      e.target.disabled = false;
+    }
+  });
+
+  document.getElementById('btn-sync-now')?.addEventListener('click', async () => {
+    const ok = await pushNow({ force: false });
+    showToast(ok ? 'Trimis ☁️' : 'Nu s-a putut trimite acum', ok ? 'success' : 'warning');
+    rerender();
+  });
+
+  document.getElementById('btn-sync-restore')?.addEventListener('click', async () => {
+    if (!confirm('Progresul de pe acest calculator va fi înlocuit cu cel de pe server. Continui?')) return;
+    try {
+      await restoreFromServer();
+      showToast('Progresul a fost adus de pe server ☁️', 'success');
+      rerender();
+    } catch (err) {
+      showToast(err.message, 'error', 4000);
+    }
+  });
+
+  document.getElementById('btn-sync-force')?.addEventListener('click', async () => {
+    if (!confirm('Progresul de pe server va fi înlocuit cu cel de aici. Continui?')) return;
+    const ok = await pushNow({ force: true });
+    showToast(ok ? 'Serverul a fost actualizat ☁️' : 'Nu s-a putut trimite acum', ok ? 'success' : 'warning');
+    rerender();
+  });
+
+  document.getElementById('btn-sync-disable')?.addEventListener('click', () => {
+    if (!confirm('Oprești sincronizarea pe acest calculator? Progresul rămâne salvat local și pe server.')) return;
+    disableSync();
+    rerender();
+  });
+
+  // Backup
+  document.getElementById('btn-export-profile')?.addEventListener('click', () => {
+    if (downloadProfile()) showToast('Fișierul cu progresul a fost descărcat 💾', 'success');
+  });
+  document.getElementById('btn-import-profile')?.addEventListener('click', () => importAndGoHome(navigate));
 
   // Reset progress (doar profilul activ)
   document.getElementById('btn-reset-progress')?.addEventListener('click', () => {

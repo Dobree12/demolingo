@@ -5,8 +5,10 @@
 // unitățile din secțiuni și quiz-urile generate (vezi data/content.js).
 
 import { resolveUnit } from '../data/content.js';
-import { addXP, addWordLearned, addMistake, recordCorrect, recordAttempt, completeLesson, getLevelName } from '../engine/progress.js';
-import { updateWordSRS } from '../engine/srs.js';
+import { addXP, addWordLearned, addMistake, removeMistake, recordCorrect, recordAttempt, completeLesson, getLevelName } from '../engine/progress.js';
+import { updateWordSRS, srsKeyFor } from '../engine/srs.js';
+import { pushNow } from '../engine/sync.js';
+import { flushTime } from '../engine/timeTracker.js';
 import { speak, speakSlow, playSound, startListening } from '../engine/audio.js';
 import { getCorrectMessage, getRandomMessage, wrongMessages, skipMessages, midLessonEncouragement } from '../data/messages.js';
 import { renderMascot, getMascotReaction } from '../components/mascot.js';
@@ -857,8 +859,6 @@ function handleWrongAttempt(exercise, correctAnswer, navigate, params) {
       lessonId: lessonData?.id || params.lessonId,
       timestamp: new Date().toISOString(),
     });
-    const word = exercise.word || exercise.prompt || exercise.correct;
-    if (word) updateWordSRS(word, 1);
   }
 
   currentAttempt = Math.min(currentAttempt + 1, currentMaxAttempts + 1);
@@ -925,6 +925,7 @@ function showRetryFeedback(exercise, correctAnswer, attempt, navigate, params) {
   document.getElementById('btn-skip-exercise')?.addEventListener('click', () => {
     feedbackArea.classList.add('hidden');
     showToast(getRandomMessage(skipMessages), 'info');
+    recordSRS(exercise, 1);
     goToNextExercise(navigate, params);
   });
 }
@@ -954,6 +955,12 @@ function showPersistentHint(hint, attempt, fullAnswer) {
   }
 }
 
+// O singură actualizare SRS per exercițiu, la rezultatul final
+function recordSRS(exercise, quality) {
+  const key = srsKeyFor(exercise);
+  if (key) updateWordSRS(key, quality);
+}
+
 function handleAnswer(isCorrect, correctAnswer, navigate, params) {
   exerciseLocked = true;
   recordAttempt();
@@ -976,9 +983,9 @@ function handleAnswer(isCorrect, correctAnswer, navigate, params) {
     if (exercise.prompt) addWordLearned(exercise.prompt);
     if (exercise.correct) addWordLearned(exercise.correct);
 
-    // Update SRS
-    const word = exercise.word || exercise.prompt || exercise.correct;
-    if (word) updateWordSRS(word, 4); // quality 4 = correct with some effort
+    // SRS: 5 = din prima, 3 = cu indicii. Rezolvat din prima → greșeala dispare.
+    recordSRS(exercise, currentAttempt === 0 ? 5 : 3);
+    if (currentAttempt === 0) removeMistake(exercise);
 
     // Sound & visual feedback
     playSound('correct');
@@ -1005,9 +1012,7 @@ function handleAnswer(isCorrect, correctAnswer, navigate, params) {
       timestamp: new Date().toISOString(),
     });
 
-    // Update SRS
-    const word = exercise.word || exercise.prompt || exercise.correct;
-    if (word) updateWordSRS(word, 1); // quality 1 = wrong but recognized after
+    recordSRS(exercise, 1);
 
     playSound('wrong');
 
@@ -1066,6 +1071,8 @@ function finishLesson(navigate, params) {
   const score = Math.round((correctCount / totalExercises) * 100);
 
   const result = completeLesson(lessonData.id, score, totalExercises);
+  flushTime();
+  pushNow();
 
   playSound('complete');
   launchConfetti(score === 100 ? 'high' : 'normal');

@@ -7,6 +7,8 @@ import './styles/screens.css';
 import { loadState, getRegistry } from './engine/storage.js';
 import { checkAndUpdateStreak } from './engine/progress.js';
 import { initTimeTracker } from './engine/timeTracker.js';
+import { migrateSRSHistory } from './engine/srs.js';
+import { initSync } from './engine/sync.js';
 import { renderHome, attachHomeEvents } from './screens/home.js';
 import { renderLesson, attachLessonEvents } from './screens/lesson.js';
 import { renderResults, attachResultsEvents } from './screens/results.js';
@@ -30,12 +32,46 @@ function applyTheme() {
 }
 
 // --- Router ---
-function navigate(screen, params = {}) {
+// Fiecare ecran e o intrare în history (params în history.state), ca butonul
+// Înapoi al telefonului să rămână în aplicație, iar refresh-ul să păstreze
+// ecranul. Lecția și rezultatele sunt tranzitorii: ieșirea din ele înlocuiește
+// intrarea, ca Înapoi să nu repornească lecția.
+const TRANSIENT = new Set(['lesson', 'results']);
+function toHistoryState(screen, params) {
+  // JSON aruncă funcțiile (ex. `check` din badge-uri), pe care pushState nu le clonează
+  return { screen, params: JSON.parse(JSON.stringify(params || {})) };
+}
+
+function navigate(screen, params = {}, { replace = false } = {}) {
+  const entry = toHistoryState(screen, params);
+  const url = `#/${screen}`;
+  if (replace || TRANSIENT.has(currentScreen)) history.replaceState(entry, '', url);
+  else history.pushState(entry, '', url);
+  show(screen, params);
+}
+
+function show(screen, params) {
   currentScreen = screen;
   currentParams = params;
   render();
   window.scrollTo(0, 0);
 }
+
+window.addEventListener('popstate', (e) => {
+  const entry = e.state;
+  if (currentScreen === 'lesson' && entry?.screen !== 'lesson') {
+    if (!confirm('Ești sigur că vrei să ieși din lecție? Progresul nu va fi salvat.')) {
+      // rămâi în lecție: pune la loc intrarea, fără re-randare
+      history.pushState(toHistoryState('lesson', currentParams), '', '#/lesson');
+      return;
+    }
+  }
+  if (!entry?.screen || !getRegistry().activeUserId) {
+    show(getRegistry().activeUserId ? 'home' : 'users', {});
+    return;
+  }
+  show(entry.screen, entry.params || {});
+});
 
 function render() {
   const app = document.getElementById('app');
@@ -105,20 +141,36 @@ function render() {
 function boot() {
   applyTheme();
   initTimeTracker();
+  initSync();
 
   // Fără profil activ → ecranul de alegere a profilului
   const registry = getRegistry();
   if (!registry.activeUserId) {
-    navigate('users');
+    navigate('users', {}, { replace: true });
     return;
   }
 
   checkAndUpdateStreak();
-  navigate('home');
+  migrateSRSHistory();
+
+  // După refresh: reia ecranul din history (rezultatele nu au sens reluate)
+  const saved = history.state;
+  if (saved?.screen && saved.screen !== 'results') {
+    navigate(saved.screen, saved.params || {}, { replace: true });
+  } else {
+    navigate('home', {}, { replace: true });
+  }
 }
 
 // --- Start ---
 document.addEventListener('DOMContentLoaded', boot);
+
+// Offline + „Adaugă pe ecranul principal" (doar în build, ca să nu cacheze dev-ul)
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW:', e));
+  });
+}
 
 // --- Expose navigate globally for debugging ---
 window.__navigate = navigate;

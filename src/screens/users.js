@@ -5,6 +5,8 @@
 
 import { getUsers, getActiveUser, createUser, switchUser, renameUser, peekUserState, loadState } from '../engine/storage.js';
 import { checkAndUpdateStreak, getLevelName } from '../engine/progress.js';
+import { migrateSRSHistory } from '../engine/srs.js';
+import { importAndGoHome } from '../utils/backup.js';
 import { renderMascot } from '../components/mascot.js';
 
 const AVATAR_OPTIONS = ['👩', '👨', '👵', '👴', '🧑', '👧', '👦', '🐱', '🐶', '🦊', '🐻', '🦉'];
@@ -72,6 +74,10 @@ export function renderUsers(navigate) {
       <button class="btn btn-secondary btn-full animate-fadeInUp" id="btn-show-new-user"
               style="margin-top: var(--space-lg); animation-delay: 0.2s;">
         ➕ Adaugă profil
+      </button>
+
+      <button class="btn btn-ghost btn-full" id="btn-users-import" style="margin-top: var(--space-sm);">
+        ⬆️ Am un fișier cu progresul
       </button>
 
       ${active ? `
@@ -149,9 +155,12 @@ export function attachUsersEvents(navigate) {
       switchUser(id);
       applyUserTheme();
       checkAndUpdateStreak();
+      migrateSRSHistory();
       navigate('home');
     });
   });
+
+  document.getElementById('btn-users-import')?.addEventListener('click', () => importAndGoHome(navigate));
 
   // Redenumire
   document.querySelectorAll('.user-card-edit').forEach((btn) => {

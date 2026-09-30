@@ -3,6 +3,7 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/wdrmopki/demolingo.dobre-paloti.ro
     - /bin/mkdir -p $DEPLOYPATH
-    - /bin/cp -R index.html $DEPLOYPATH
+    - /bin/cp -R index.html progres.html sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png apple-touch-icon.png $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH
+    - /bin/cp -R api $DEPLOYPATH
     - /bin/cp .htaccess $DEPLOYPATH

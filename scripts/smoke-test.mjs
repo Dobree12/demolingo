@@ -1,4 +1,4 @@
-// Smoke test pentru fluxurile principale (rulat local cu Playwright, nu intră în build)
+﻿// Smoke test pentru fluxurile principale (rulat local cu Playwright, nu intră în build)
 import { chromium } from 'playwright';
 
 const BASE = process.env.BASE_URL || 'http://localhost:5173';
@@ -34,8 +34,8 @@ try {
 
   // 4. Secțiunile apar pe home
   const sectionCards = await page.$$('.home-section-card');
-  if (sectionCards.length !== 4) throw new Error(`${sectionCards.length} secțiuni în loc de 4`);
-  ok('4 secțiuni pe home');
+  if (sectionCards.length !== 5) throw new Error(`${sectionCards.length} secțiuni în loc de 5`);
+  ok('5 secțiuni pe home');
 
   // 5. Secțiune → unitate → exercițiu picturePick
   await page.click('.home-section-card[data-section-id="cuvinte-uzuale"]');

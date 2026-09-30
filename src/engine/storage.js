@@ -31,6 +31,7 @@ const defaultState = {
   theme: 'light',
   createdAt: null,
   mistakes: [],             // recent mistakes for practice hub
+  activityLog: {},          // { 'AAAA-LL-ZZ': { minutes, xp, answers, correct, lessons } }
 };
 
 // --- Registry ---
@@ -141,6 +142,41 @@ export function peekUserState(id) {
     console.error('Failed to peek user state:', e);
   }
   return { ...defaultState };
+}
+
+// --- Export / import (backup sau mutat pe alt dispozitiv, fără server) ---
+
+const EXPORT_APP = 'invatam-germana';
+
+export function exportActiveProfile() {
+  const user = getActiveUser();
+  if (!user) return null;
+  return {
+    app: EXPORT_APP,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    profile: { name: user.name, avatar: user.avatar },
+    state: loadState(),
+  };
+}
+
+// Importă mereu ca profil NOU (nu suprascrie nimic) și îl face activ.
+// Aruncă Error cu mesaj pentru utilizator dacă fișierul nu e valid.
+export function importProfile(data) {
+  if (!data || data.app !== EXPORT_APP || typeof data.state !== 'object' || !data.state) {
+    throw new Error('Fișierul nu este un export din Învățăm Germană.');
+  }
+  const base = { ...defaultState, ...data.state };
+  for (const [k, v] of Object.entries(defaultState)) {
+    if (Array.isArray(v) && !Array.isArray(base[k])) base[k] = v;
+    if (typeof v === 'number' && typeof base[k] !== 'number') base[k] = v;
+  }
+  if (typeof base.lessonsCompleted !== 'object' || !base.lessonsCompleted) base.lessonsCompleted = {};
+  // numele/avatarul ajung în HTML → fără caractere de markup
+  const clean = (s, max) => String(s || '').replace(/[<>&"'`]/g, '').slice(0, max);
+  const user = createUser(clean(data.profile?.name, 24) || 'Profil importat', clean(data.profile?.avatar, 8) || undefined);
+  saveState(base);
+  return user;
 }
 
 // --- Per-user state ---

@@ -9,6 +9,7 @@
 import { augmentExercises } from './generator.js';
 import { buildVocabUnits, buildSentenceUnits, buildVisualUnits } from './sectionContent.js';
 import { buildAboutMeUnits, buildAboutMeSeriesUnits, buildAboutMeExtraUnits } from './aboutMeContent.js';
+import { buildA2Units } from './a2Content.js';
 
 export const sections = [
   // ------------------------------------------------
@@ -521,6 +522,21 @@ export const sections = [
         ],
       },
     ],
+  },
+
+  // ------------------------------------------------
+  // 5. DRUMUL SPRE A2 — 70 lecții A1 cu toate tipurile, apoi 30 de tranziție
+  //    progresivă A1 → A2 (vezi a2Content.js)
+  // ------------------------------------------------
+  {
+    id: 'spre-a2',
+    title: 'Drumul spre A2',
+    icon: '🎓',
+    description: '100 de lecții: A1 cu toate exercițiile, apoi pas cu pas spre A2',
+    kind: 'units',
+    series: true,
+    seriesSize: 10,
+    units: buildA2Units('a2'),
   },
 ];
 
