@@ -59,9 +59,11 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'GET') {
   $key = (string)($_SERVER['HTTP_X_KEY'] ?? '');
   if (!keyIs($key, $readKey) && !keyIs($key, $writeKey)) reply(403, ['error' => 'bad_key']);
+  // `access` spune aplicației ce fel de cheie e (activarea cere cheia de scriere)
+  $access = keyIs($key, $writeKey) ? 'write' : 'read';
   $stored = readStored($progressFile);
-  if (!$stored) reply(404, ['error' => 'empty']);
-  reply(200, $stored);
+  if (!$stored) reply(404, ['error' => 'empty', 'access' => $access]);
+  reply(200, $stored + ['access' => $access]);
 }
 
 if ($method !== 'POST') reply(405, ['error' => 'method']);

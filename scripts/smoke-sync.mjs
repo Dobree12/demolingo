@@ -37,17 +37,40 @@ const serverState = async (page, key = READ_KEY) => {
 };
 
 try {
-  // --- Calculatorul cursantului ---
+  // --- Cheia de citire pusă în aplicație → refuzată la activare ---
+  const wrongPc = await newPage();
+  await createProfile(wrongPc, 'PC-ul meu');
+  await wrongPc.evaluate(() => window.__navigate('settings'));
+  await wrongPc.fill('#sync-key-input', READ_KEY);
+  await wrongPc.click('#btn-sync-enable');
+  await wrongPc.waitForSelector('.toast-error');
+  if (await wrongPc.$('#btn-sync-now')) throw new Error('cheia de citire a activat sincronizarea');
+  if (await wrongPc.evaluate(() => localStorage.getItem('invatam_germana_sync'))) throw new Error('setări salvate cu cheia de citire');
+  ok('Cheia de citire în aplicație → refuzată cu mesaj clar');
+
+  // --- Calculatorul cursantului (progres real: stare > 64 KB, limita keepalive) ---
   const learner = await newPage();
   await createProfile(learner, 'Paula');
   await learner.evaluate(() => {
     const reg = JSON.parse(localStorage.getItem('invatam_germana_users'));
     const key = `invatam_germana::${reg.activeUserId}`;
     const s = JSON.parse(localStorage.getItem(key));
+    const past = new Date(Date.now() - 86400000).toISOString();
     Object.assign(s, { xp: 150, level: 2, totalAttempts: 20, totalCorrect: 17, totalWrong: 3, totalLessonsCompleted: 1,
-      lessonsCompleted: { 'a2-1': { completed: true, stars: 3, bestScore: 100, completedAt: new Date().toISOString() } } });
+      lessonsCompleted: { 'a2-1': { completed: true, stars: 3, bestScore: 100, completedAt: new Date().toISOString() } },
+      exerciseHistory: Array.from({ length: 400 }, (_, i) => ({ word: `Wort${i}`, interval: 6, repetitions: 2, easeFactor: 2.5, nextReview: past, lastReview: past })),
+      mistakes: Array.from({ length: 50 }, (_, i) => ({ exercise: { type: 'sentenceBuild', promptRo: `Propoziția numărul ${i} care e destul de lungă. `.repeat(30), answer: `Das ist der Satz Nummer ${i} und er ist lang genug`, bank: ['Das', 'ist', 'der', 'Satz', 'Nummer', 'und', 'er', 'lang', 'genug', 'heute', 'mit'] }, lessonId: `lp-${i}`, timestamp: past })),
+    });
     localStorage.setItem(key, JSON.stringify(s));
   });
+  await learner.reload();
+  await learner.waitForSelector('.home-screen');
+  // mărimea DUPĂ boot (migrarea SRS aruncă intrările care nu sunt în dicționar)
+  const size = await learner.evaluate(() => {
+    const reg = JSON.parse(localStorage.getItem('invatam_germana_users'));
+    return localStorage.getItem(`invatam_germana::${reg.activeUserId}`).length;
+  });
+  if (size < 70000) throw new Error(`starea de test are doar ${size} octeți`);
   await learner.reload();
   await learner.evaluate(() => window.__navigate('settings'));
   await learner.fill('#sync-key-input', WRITE_KEY);
@@ -57,7 +80,7 @@ try {
   if (srv.status !== 200 || srv.body.state.xp !== 150 || srv.body.profile.name !== 'Paula') {
     throw new Error(`după activare: ${srv.status} ${JSON.stringify(srv.body)?.slice(0, 120)}`);
   }
-  ok('Activare → progresul existent urcă pe server (nimic pierdut)');
+  ok(`Activare → progresul existent (${Math.round(size / 1024)} KB) urcă pe server (nimic pierdut)`);
 
   // O lecție terminată se trimite automat, cu jurnalul zilei
   await learner.evaluate(() => window.__navigate('lesson', {

@@ -47,20 +47,31 @@ function activeSettings() {
   return { s, user };
 }
 
-export async function fetchServerState(key) {
+// Întoarce { access: 'write'|'read', server: <înregistrarea salvată> | null }
+async function fetchServer(key) {
   const res = await fetch(API, { headers: { 'X-Key': key }, cache: 'no-store' });
-  if (res.status === 404) return null;
   if (res.status === 403) throw new Error('Cheie greșită.');
-  if (!res.ok) throw new Error(`Serverul a răspuns ${res.status}.`);
-  return res.json();
+  if (res.status !== 200 && res.status !== 404) throw new Error(`Serverul a răspuns ${res.status}.`);
+  const body = await res.json().catch(() => ({}));
+  return { access: body.access, server: res.status === 200 ? body : null };
 }
 
+export async function fetchServerState(key) {
+  return (await fetchServer(key)).server;
+}
+
+// Browserele limitează corpul cererilor `keepalive` la 64 KB (altfel fetch
+// eșuează ca eroare de rețea). Îl folosim doar pentru stări mici — util la
+// închiderea tab-ului; progresul real depășește de obicei limita.
+const KEEPALIVE_MAX = 60_000;
+
 async function postState(key, user, state, force = false) {
+  const payload = JSON.stringify({ key, force, profile: { name: user.name, avatar: user.avatar }, state });
   const res = await fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, force, profile: { name: user.name, avatar: user.avatar }, state }),
-    keepalive: true,
+    body: payload,
+    keepalive: payload.length < KEEPALIVE_MAX,
   });
   const body = await res.json().catch(() => ({}));
   return { status: res.status, body };
@@ -93,7 +104,7 @@ export function pushNow({ force = false } = {}) {
       }
       return false;
     } catch {
-      patchSettings({ lastError: 'offline' });
+      patchSettings({ lastError: navigator.onLine === false ? 'offline' : 'network' });
       return false;
     } finally {
       inFlight = null;
@@ -107,7 +118,10 @@ export function pushNow({ force = false } = {}) {
 export async function enableSync(key) {
   const user = getActiveUser();
   if (!user) throw new Error('Alege mai întâi un profil.');
-  const server = await fetchServerState(key); // aruncă la cheie greșită
+  const { access, server } = await fetchServer(key); // aruncă la cheie greșită
+  if (access !== 'write') {
+    throw new Error('Aceasta este cheia de citire — ea se folosește doar în pagina progres.html. Aici trebuie cheia de scriere.');
+  }
   writeSettings({ key, profileId: user.id, enabledAt: new Date().toISOString() });
   const local = loadState();
   const serverAttempts = server?.state?.totalAttempts || 0;

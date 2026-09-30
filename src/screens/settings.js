@@ -18,7 +18,8 @@ const GOAL_OPTIONS = [
 
 const SYNC_ERRORS = {
   offline: 'Nu există conexiune — se trimite automat mai târziu.',
-  bad_key: 'Cheia nu mai e acceptată de server.',
+  network: 'Serverul nu a putut fi contactat — se reîncearcă automat.',
+  bad_key: 'Serverul nu acceptă cheia pentru scriere. Apasă „Dezactivează" și activează din nou cu cheia de scriere (sau, dacă aici doar urmărești progresul, folosește progres.html).',
   regression: 'Serverul are mai mult progres decât acest calculator.',
   not_configured: 'Serverul nu este configurat încă.',
 };
