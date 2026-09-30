@@ -111,7 +111,7 @@ export function renderHome(navigate) {
         const collapsed = stored !== null ? stored === '1' : seriesDone[s];
         blocks.push(`
           <button class="series-header series-toggle" data-series="${s}" aria-expanded="${!collapsed}">
-            <span class="series-header-title">Seria ${s + 1} / ${seriesCount}</span>
+            <span class="series-header-title">Seria ${s + 1} / ${seriesCount}${slice[0].level ? ` · ${slice[0].level} · ${slice[0].titleDe}` : ''}</span>
             <span class="series-header-right">
               <span class="series-header-progress">${done}/${slice.length}</span>
               <span class="series-caret">${collapsed ? '▾' : '▴'}</span>

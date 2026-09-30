@@ -9,7 +9,7 @@ import { addXP, addWordLearned, addMistake, removeMistake, recordCorrect, record
 import { updateWordSRS, srsKeyFor } from '../engine/srs.js';
 import { pushNow } from '../engine/sync.js';
 import { flushTime } from '../engine/timeTracker.js';
-import { speak, speakSlow, playSound, startListening } from '../engine/audio.js';
+import { speak, speakSlow, playSound, startListening, stopListening } from '../engine/audio.js';
 import { getCorrectMessage, getRandomMessage, wrongMessages, skipMessages, midLessonEncouragement } from '../data/messages.js';
 import { renderMascot, getMascotReaction } from '../components/mascot.js';
 import { launchConfetti, launchStars } from '../components/confetti.js';
@@ -614,66 +614,80 @@ function attachSpeakEvents(exercise, navigate, params) {
   // Auto play reference
   setTimeout(() => speak(exercise.word), 500);
 
+  // „Nu pot vorbi acum" — mereu disponibil, nu contează ca greșeală
+  document.getElementById('btn-cant-speak')?.addEventListener('click', () => skipSpeakExercise(navigate, params));
+
   // Record button
   const recordBtn = document.getElementById('btn-record');
+  const resultDiv = document.getElementById('speak-result');
   let isRecording = false;
+  let silentTries = 0;
+
+  const showResult = (html) => {
+    if (!resultDiv) return;
+    resultDiv.innerHTML = html;
+    resultDiv.classList.remove('hidden');
+  };
+  const resetButton = () => {
+    isRecording = false;
+    recordBtn.classList.remove('recording');
+    recordBtn.innerHTML = '🎤 Încearcă din nou';
+  };
 
   recordBtn?.addEventListener('click', async () => {
     if (exerciseLocked) return;
-
-    if (isRecording) return;
+    // Apăsat din nou în timp ce ascultă → oprește (se încheie ca „nu s-a auzit")
+    if (isRecording) { stopListening(); return; }
     isRecording = true;
     recordBtn.classList.add('recording');
-    recordBtn.innerHTML = '🔴 Ascult...';
+    recordBtn.innerHTML = '🔴 Ascult... (apasă ca să oprești)';
 
+    let results;
     try {
-      const results = await startListening('de-DE');
-
-      recordBtn.classList.remove('recording');
-      recordBtn.innerHTML = '🎤 Încearcă din nou';
-      isRecording = false;
-
-      if (results.length > 0) {
-        const expected = exercise.word.toLowerCase().replace(/[?.!,]/g, '').trim();
-        const match = results.some(r => {
-          const spoken = r.transcript.replace(/[?.!,]/g, '').trim();
-          return spoken === expected || spoken.includes(expected) || expected.includes(spoken);
-        });
-
-        const resultDiv = document.getElementById('speak-result');
-        if (resultDiv) {
-          resultDiv.innerHTML = `<p>Ai spus: "<strong>${results[0].transcript}</strong>"</p>`;
-          resultDiv.classList.remove('hidden');
-        }
-
-        handleAnswer(match, exercise.word, navigate, params);
-      } else {
-        const resultDiv = document.getElementById('speak-result');
-        if (resultDiv) {
-          resultDiv.innerHTML = `<p>Nu am auzit nimic. Încearcă din nou! 🎤</p>`;
-          resultDiv.classList.remove('hidden');
-        }
-      }
+      results = await startListening('de-DE');
     } catch (e) {
       console.error('Speech recognition error:', e);
-      recordBtn.classList.remove('recording');
-      recordBtn.innerHTML = '🎤 Încearcă din nou';
-      isRecording = false;
-
-      // If speech recognition not available, provide skip option
-      const resultDiv = document.getElementById('speak-result');
-      if (resultDiv) {
-        resultDiv.innerHTML = `
-          <p>Recunoașterea vocală nu este disponibilă în acest browser. 😔</p>
-          <button class="btn btn-secondary btn-sm" id="btn-skip-speak">Treci mai departe →</button>
-        `;
-        resultDiv.classList.remove('hidden');
-        document.getElementById('btn-skip-speak')?.addEventListener('click', () => {
-          handleAnswer(true, '', navigate, params);
-        });
-      }
+      if (!recordBtn.isConnected || exerciseLocked) return;
+      resetButton();
+      showResult(`
+        <p>Microfonul sau recunoașterea vocală nu merg acum. 😔</p>
+        <button class="btn btn-secondary btn-sm" id="btn-skip-speak">Treci mai departe →</button>
+      `);
+      document.getElementById('btn-skip-speak')?.addEventListener('click', () => skipSpeakExercise(navigate, params));
+      return;
     }
+
+    // Între timp s-a trecut mai departe (ex. „Nu pot vorbi acum")
+    if (!recordBtn.isConnected || exerciseLocked) return;
+    resetButton();
+
+    if (results.length === 0) {
+      silentTries++;
+      showResult(silentTries >= 2
+        ? '<p>Tot nu te aud. 🎤 Verifică microfonul — sau apasă „Nu pot vorbi acum" de mai jos.</p>'
+        : '<p>Nu am auzit nimic. Încearcă din nou! 🎤</p>');
+      return;
+    }
+
+    const expected = exercise.word.toLowerCase().replace(/[?.!,]/g, '').trim();
+    const match = results.some(r => {
+      const spoken = r.transcript.replace(/[?.!,]/g, '').trim();
+      return spoken === expected || spoken.includes(expected) || expected.includes(spoken);
+    });
+    showResult(`<p>Ai spus: "<strong>${results[0].transcript}</strong>"</p>`);
+    handleAnswer(match, exercise.word, navigate, params);
   });
+}
+
+// Sare peste exercițiul de vorbit fără penalizare (ca „Can't speak now"):
+// nu e greșeală, nu dă XP, iar scorul lecției nu scade.
+function skipSpeakExercise(navigate, params) {
+  if (exerciseLocked) return;
+  exerciseLocked = true;
+  stopListening();
+  correctCount++;
+  showToast('Am sărit peste exercițiul de vorbit 🙊', 'info');
+  goToNextExercise(navigate, params);
 }
 
 // ============================================
@@ -1053,6 +1067,7 @@ function showFeedback(isCorrect, message, correctAnswer, navigate, params) {
 }
 
 function goToNextExercise(navigate, params) {
+  stopListening(); // microfonul nu rămâne pornit pe exercițiul următor
   currentExerciseIndex++;
   currentAttempt = 0;
   currentMaxAttempts = 3;

@@ -8,7 +8,7 @@
     "verify": "node scripts/verify-vocab.mjs",
     "build": "npm run verify && vite build",
     "preview": "vite preview",
-    "smoke": "node scripts/smoke-test.mjs && node scripts/smoke-practice.mjs && node scripts/smoke-a2.mjs &&node scripts/smoke-dialogue.mjs && node scripts/smoke-newtypes.mjs && node scripts/smoke-home-collapse.mjs && node scripts/smoke-series-collapse.mjs && node scripts/smoke-home-series.mjs"
+    "smoke": "node scripts/smoke-test.mjs && node scripts/smoke-practice.mjs && node scripts/smoke-a2.mjs && node scripts/smoke-path.mjs && node scripts/smoke-dialogue.mjs && node scripts/smoke-speak.mjs &&node scripts/smoke-newtypes.mjs && node scripts/smoke-home-collapse.mjs && node scripts/smoke-series-collapse.mjs && node scripts/smoke-home-series.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

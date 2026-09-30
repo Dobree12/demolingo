@@ -11,6 +11,7 @@
 import { dictionary } from './dictionary.js';
 import { generateExercises, TYPE_SETS } from './generator.js';
 import { SENTENCE_GROUPS, SENTENCE_GROUPS_EXTRA, SENTENCE_TYPES_FULL, generateSentenceExercises } from './sentenceBank.js';
+import { buildPathLessons } from './pathA2.js';
 
 // Grupuri tematice (categorie din dicționar → pool de cuvinte pentru un nod)
 const GROUPS = [
@@ -160,4 +161,12 @@ function buildSentenceLessons2() {
   return out;
 }
 
-export const extraLessons = [...buildExtraLessons(), ...buildSentenceLessons(), ...buildSentenceLessons2()];
+// --- Seriile 26–50: de la A1+ spre A2, pe teme (vezi data/pathA2.js) ---
+const PATH_START = SENTENCE2_START + SENTENCE2_TOTAL; // 250
+
+export const extraLessons = [
+  ...buildExtraLessons(),
+  ...buildSentenceLessons(),
+  ...buildSentenceLessons2(),
+  ...buildPathLessons({ startN: PATH_START, classicCount: CLASSIC_COUNT, startSeries: PATH_START / EXTRA_SERIES_SIZE + 1 }),
+];

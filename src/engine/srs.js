@@ -69,8 +69,11 @@ export function srsKeyFor(exercise) {
   const candidates = [];
   switch (exercise.type) {
     case 'multiChoice': {
-      const quoted = /"([^"]+)"/.exec(exercise.question || '');
-      if (quoted) candidates.push(quoted[1]);
+      // „Cum se spune "X" în germană?" → X e românesc (poate coincide cu un
+      // cuvânt german, ex. „da"), deci cheia e răspunsul corect.
+      const question = exercise.question || '';
+      const quoted = /"([^"]+)"/.exec(question);
+      if (quoted && !/^Cum (se )?spu/i.test(question)) candidates.push(quoted[1]);
       candidates.push(exercise.correct);
       break;
     }

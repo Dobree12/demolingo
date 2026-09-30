@@ -131,21 +131,43 @@ export function isSpeechRecognitionSupported() {
   return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
+const LISTEN_TIMEOUT_MS = 10_000;
+
+// Promisiunea se încheie MEREU: cu rezultate, cu [] (nu s-a auzit nimic) sau
+// cu eroare. Unele browsere închid recunoașterea fără onresult/onerror (doar
+// onend) — fără garda asta exercițiul rămânea blocat în „Ascult...".
 export function startListening(lang = 'de-DE') {
   return new Promise((resolve, reject) => {
     if (!isSpeechRecognitionSupported()) {
       reject(new Error('Speech recognition not supported'));
       return;
     }
-    
+
+    stopListening(); // o singură sesiune activă
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.lang = lang;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-    recognition.continuous = false;
-    
-    recognition.onresult = (event) => {
+    const rec = new SpeechRecognition();
+    recognition = rec;
+    rec.lang = lang;
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+    rec.continuous = false;
+
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (recognition === rec) recognition = null;
+      fn(value);
+    };
+    // Plasă de siguranță: dacă browserul nu mai răspunde, oprim după 10s
+    const timer = setTimeout(() => {
+      try { rec.abort(); } catch { /* deja oprit */ }
+      finish(resolve, []);
+    }, LISTEN_TIMEOUT_MS);
+
+    rec.onresult = (event) => {
       const results = [];
       for (let i = 0; i < event.results[0].length; i++) {
         results.push({
@@ -153,28 +175,31 @@ export function startListening(lang = 'de-DE') {
           confidence: event.results[0][i].confidence,
         });
       }
-      resolve(results);
+      finish(resolve, results);
     };
-    
-    recognition.onerror = (event) => {
-      if (event.error === 'no-speech') {
-        resolve([]);
+
+    rec.onerror = (event) => {
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        finish(resolve, []);
       } else {
-        reject(new Error(`Speech recognition error: ${event.error}`));
+        finish(reject, new Error(`Speech recognition error: ${event.error}`));
       }
     };
-    
-    recognition.onend = () => {
-      // If no result was returned
-    };
-    
-    recognition.start();
+
+    // S-a închis fără rezultat și fără eroare → „nu s-a auzit nimic"
+    rec.onend = () => finish(resolve, []);
+
+    try {
+      rec.start();
+    } catch (e) {
+      finish(reject, e);
+    }
   });
 }
 
 export function stopListening() {
   if (recognition) {
-    recognition.stop();
+    try { recognition.abort(); } catch { /* deja oprit */ }
     recognition = null;
   }
 }

@@ -35,6 +35,10 @@ export function renderSpeak(exercise) {
       </div>
 
       <div class="speak-result hidden" id="speak-result"></div>
+
+      <div class="speak-skip-area">
+        <button class="speak-skip-btn" id="btn-cant-speak">🙊 Nu pot vorbi acum</button>
+      </div>
     </div>
 
     <style>
@@ -161,6 +165,23 @@ export function renderSpeak(exercise) {
         font-size: var(--font-size-sm);
         color: var(--text-secondary);
         font-weight: var(--font-weight-semibold);
+      }
+
+      .speak-skip-area {
+        text-align: center;
+        margin-top: var(--space-md);
+      }
+
+      .speak-skip-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-family: var(--font-family);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-bold);
+        text-decoration: underline;
+        cursor: pointer;
+        padding: var(--space-sm) var(--space-md);
       }
 
       .speak-result {
