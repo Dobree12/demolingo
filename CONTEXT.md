@@ -49,6 +49,8 @@ Branch-ul `main` se push-uiește separat (`git push origin main`).
 - **Conversații cu Maria, Ileana, Anuța** (`src/data/conversations.js`, 24 de conversații de 4–6 replici despre casă, curățenie, rufe, gătit, cumpărături, copii, oaspeți, vecini, sfaturi; niveluri A1+/A2−/A2). Paula (cursanta) = `who: 0`, replica ei lipsește și se rotește între lecții. Fiecare lecție din seriile 26–50 are o conversație; dialogul scurt al temei apare în lecțiile 1, 4, 7, 10. Userul a cerut numele Maria, Ileana, Anuța — fără relație (prietenă/soră) afișată.
 - Cuvintele noi din seriile 26–50 + conversații: `category: 'a2plus'` în dicționar (846 intrări în total). Nume noi la `nume`: Paula, Maria, Ileana. `srsKeyFor` nu mai ia textul citat din „Cum se spune "X"…" (X e românesc și poate coincide cu un cuvânt german, ex. „da"). Test: `scripts/smoke-path.mjs`.
 
+- **Nimic nu are voie să blocheze un exercițiu**: (1) renderele de exerciții escapează textul pus în atribute/HTML cu `esc()` din `src/utils/html.js` — un `"` într-o traducere tăia `data-value` și potrivirea nu mai mergea (lecția 283, „leg"); `verify-vocab` refuză ghilimele drepte în dicționar (folosește „…”). (2) `match` și `sortCategories` (fără etape de indiciu) arată „Treci peste →" după 3 încercări greșite (`offerStuckSkip` în `lesson.js`; exercițiul sărit ajunge la Practică). (3) La vorbit: ascultarea se încheie mereu (onend fără rezultat / timeout 10s) + „🙊 Nu pot vorbi acum". Teste: `smoke-stuck.mjs`, `smoke-speak.mjs`.
+
 ## Decizii de design (confirmate cu userul)
 
 - **Fără inimi** — eliminate complet; pe home apare acuratețea în loc de ❤️.

@@ -221,9 +221,39 @@ function attachTrueFalseEvents(exercise, navigate, params) {
   });
 }
 
+// Plasă de siguranță pentru exercițiile fără etape de indiciu (match,
+// sortCategories): după 3 încercări greșite apare „Treci peste", ca nimeni să
+// nu rămână blocat. Exercițiul sărit ajunge la Practică → „Repară greșelile".
+const STUCK_AFTER = 3;
+
+function offerStuckSkip(exercise, navigate, params) {
+  const area = document.getElementById('exercise-area');
+  if (!area || document.getElementById('btn-stuck-skip')) return;
+  const box = document.createElement('div');
+  box.className = 'animate-fadeInUp';
+  box.style.cssText = 'margin-top: var(--space-lg); text-align: center;';
+  box.innerHTML = `
+    <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-sm);">
+      Nu merge? Poți trece mai departe — exercițiul rămâne la Practică.
+    </p>
+    <button class="btn btn-secondary btn-full" id="btn-stuck-skip">Treci peste →</button>
+  `;
+  area.appendChild(box);
+  box.querySelector('#btn-stuck-skip').addEventListener('click', () => {
+    if (exerciseLocked) return;
+    exerciseLocked = true;
+    wrongCount++;
+    consecutiveCorrect = 0;
+    addMistake({ exercise, lessonId: lessonData?.id || params.lessonId, timestamp: new Date().toISOString() });
+    showToast(getRandomMessage(skipMessages), 'info');
+    goToNextExercise(navigate, params);
+  });
+}
+
 function attachSortCategoriesEvents(exercise, navigate, params) {
   const total = exercise.items.length;
   let placed = 0;
+  let wrongTries = 0;
   let selectedItem = null; // { el, de, cat }
 
   const clearSelection = () => {
@@ -264,6 +294,7 @@ function attachSortCategoriesEvents(exercise, navigate, params) {
         // greșit: doar scutură coșul (ca la `match`, fără modal de indiciu)
         bucket.classList.add('sc-bucket-wrong');
         playSound('wrong');
+        if (++wrongTries >= STUCK_AFTER) offerStuckSkip(exercise, navigate, params);
         setTimeout(() => bucket.classList.remove('sc-bucket-wrong'), 600);
       }
     });
@@ -511,6 +542,7 @@ function attachMatchEvents(exercise, navigate, params) {
   let selectedLeft = null;
   let selectedRight = null;
   let matchedPairs = 0;
+  let wrongTries = 0;
   const totalPairs = exercise.pairs.length;
 
   document.querySelectorAll('.match-item').forEach(item => {
@@ -551,6 +583,7 @@ function attachMatchEvents(exercise, navigate, params) {
           leftEl.classList.add('match-wrong-anim');
           rightEl.classList.add('match-wrong-anim');
           playSound('wrong');
+          if (++wrongTries >= STUCK_AFTER) offerStuckSkip(exercise, navigate, params);
           setTimeout(() => {
             leftEl.classList.remove('match-selected', 'match-wrong-anim');
             rightEl.classList.remove('match-selected', 'match-wrong-anim');

@@ -11,15 +11,16 @@
 //     options: ['câine','pisică','cal']   // variante românești
 //   }
 
+import { esc } from '../utils/html.js';
 export function renderListenChoice(exercise) {
   const optionsHTML = exercise.options
     .map(
       (option, i) => `
       <button class="lc-option card card-interactive animate-fadeInUp"
-              data-value="${option}"
+              data-value="${esc(option)}"
               style="animation-delay: ${i * 0.08}s;">
         <span class="lc-option-letter">${String.fromCharCode(65 + i)}</span>
-        <span class="lc-option-text">${option}</span>
+        <span class="lc-option-text">${esc(option)}</span>
       </button>
     `
     )

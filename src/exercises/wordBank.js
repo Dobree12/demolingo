@@ -9,6 +9,7 @@
 //     bank: ['Ceai','sau','cafea','bun','apă'],  // tokens to choose from (includes distractors)
 //   }
 
+import { esc } from '../utils/html.js';
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -22,8 +23,8 @@ export function renderWordBank(exercise) {
   const tokens = shuffle(exercise.bank);
   const tilesHTML = tokens
     .map((t, i) => `
-      <button class="wb-tile card-interactive animate-fadeInUp" data-token="${t}" data-idx="${i}" style="animation-delay:${i * 0.04}s">
-        ${t}
+      <button class="wb-tile card-interactive animate-fadeInUp" data-token="${esc(t)}" data-idx="${i}" style="animation-delay:${i * 0.04}s">
+        ${esc(t)}
       </button>
     `)
     .join('');

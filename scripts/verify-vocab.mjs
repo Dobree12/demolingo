@@ -169,6 +169,16 @@ for (const section of sections) {
   }
 }
 
+// --- Ghilimele drepte în dicționar ---
+// Un `"` într-o traducere ajungea în atribute HTML și bloca exerciții (lecția 283,
+// „leg"). Renderele escapează acum, dar păstrăm datele curate: folosește „…”.
+const quoteFailures = dictionary.filter(e => /"/.test(`${e.de}${e.ro}${e.original || ''}`));
+if (quoteFailures.length > 0) {
+  console.error(`\n❌ Ghilimele drepte (") în dicționar — folosește „…” în loc:\n`);
+  for (const e of quoteFailures) console.error(`  ${e.de}: ${e.ro}`);
+  process.exit(1);
+}
+
 // --- Raport ---
 if (failures.length > 0) {
   console.error(`\n❌ Verificare vocabular EȘUATĂ — ${failures.length} cuvinte negăsite în dicționar:\n`);

@@ -9,6 +9,7 @@
 //     options: ['Milch','Tee','Kaffee']  // each gets an emoji from wordAssets
 //   }
 
+import { esc } from '../utils/html.js';
 import { getEmojiForWord } from '../data/wordAssets.js';
 
 export function renderPicturePick(exercise) {
@@ -17,10 +18,10 @@ export function renderPicturePick(exercise) {
       const emoji = getEmojiForWord(opt) || '🎴';
       return `
         <button class="pp-card card-interactive animate-fadeInUp"
-                data-value="${opt}"
+                data-value="${esc(opt)}"
                 style="animation-delay:${i * 0.08}s">
           <span class="pp-emoji">${emoji}</span>
-          <span class="pp-label">${opt}</span>
+          <span class="pp-label">${esc(opt)}</span>
           <span class="pp-index">${i + 1}</span>
         </button>
       `;

@@ -12,6 +12,7 @@
 //     isTrue: false         // potrivirea propusă este corectă?
 //   }
 
+import { esc } from '../utils/html.js';
 export function renderTrueFalse(exercise) {
   return `
     <div class="exercise-true-false">
@@ -22,10 +23,10 @@ export function renderTrueFalse(exercise) {
       <div class="tf-card animate-fadeIn">
         <div class="tf-de">
           <button class="tf-speaker" id="btn-tf-speak" aria-label="Ascultă">🔊</button>
-          <span class="tf-de-text">${exercise.de}</span>
+          <span class="tf-de-text">${esc(exercise.de)}</span>
         </div>
         <span class="tf-equals">=</span>
-        <span class="tf-ro-text">${exercise.ro}</span>
+        <span class="tf-ro-text">${esc(exercise.ro)}</span>
       </div>
 
       <div class="tf-buttons">

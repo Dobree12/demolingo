@@ -2,6 +2,7 @@
 // Multi-Choice Exercise Renderer
 // ============================================
 
+import { esc } from '../utils/html.js';
 import { getEmojiForWord } from '../data/wordAssets.js';
 
 /**
@@ -19,10 +20,10 @@ export function renderMultiChoice(exercise) {
     .map(
       (option, i) => `
       <button class="mc-option card card-interactive animate-fadeInUp"
-              data-value="${option}"
+              data-value="${esc(option)}"
               style="animation-delay: ${i * 0.08}s;">
         <span class="mc-option-letter">${allHaveEmoji ? emojis[i] : String.fromCharCode(65 + i)}</span>
-        <span class="mc-option-text">${option}</span>
+        <span class="mc-option-text">${esc(option)}</span>
       </button>
     `
     )

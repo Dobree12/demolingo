@@ -16,6 +16,7 @@
 //     options: ['Mir geht es gut', '...'],       // pentru multiChoice
 //   }
 
+import { esc } from '../utils/html.js';
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -59,13 +60,13 @@ export function renderDialogue(exercise) {
   if (exercise.mode === 'multiChoice') {
     interactHTML = shuffle(exercise.options)
       .map(opt => `
-        <button class="dlg-option mc-option card-interactive" data-value="${opt}">${opt}</button>
+        <button class="dlg-option mc-option card-interactive" data-value="${esc(opt)}">${esc(opt)}</button>
       `).join('');
     interactHTML = `<div class="dlg-options">${interactHTML}</div>`;
   } else {
     const tiles = shuffle(exercise.bank)
       .map((t, i) => `
-        <button class="wb-tile card-interactive" data-token="${t}" data-idx="${i}">${t}</button>
+        <button class="wb-tile card-interactive" data-token="${esc(t)}" data-idx="${i}">${esc(t)}</button>
       `).join('');
     interactHTML = `
       <div class="wb-answer-row" id="dlg-answer">

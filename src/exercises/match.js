@@ -2,6 +2,7 @@
 // Match Pairs Exercise Renderer
 // ============================================
 
+import { esc } from '../utils/html.js';
 /**
  * Shuffles an array using Fisher-Yates algorithm.
  * @param {any[]} arr
@@ -40,11 +41,11 @@ export function renderMatch(exercise) {
       (item, i) => `
       <button class="match-item card card-interactive animate-fadeInUp"
               data-side="left"
-              data-value="${item.value}"
+              data-value="${esc(item.value)}"
               data-index="${item.index}"
               style="animation-delay: ${i * 0.07}s;">
         <span class="match-flag">🇩🇪</span>
-        <span class="match-text">${item.value}</span>
+        <span class="match-text">${esc(item.value)}</span>
       </button>
     `
     )
@@ -55,11 +56,11 @@ export function renderMatch(exercise) {
       (item, i) => `
       <button class="match-item card card-interactive animate-fadeInUp"
               data-side="right"
-              data-value="${item.value}"
+              data-value="${esc(item.value)}"
               data-index="${item.index}"
               style="animation-delay: ${i * 0.07 + 0.1}s;">
         <span class="match-flag">🇷🇴</span>
-        <span class="match-text">${item.value}</span>
+        <span class="match-text">${esc(item.value)}</span>
       </button>
     `
     )

@@ -14,6 +14,7 @@
 //     bank: ['Hallo','ich','heisse','Paula','und','bin','49','Jahre','alt', ...]
 //   }
 
+import { esc } from '../utils/html.js';
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -27,8 +28,8 @@ export function renderSentenceBuild(exercise) {
   const tokens = shuffle(exercise.bank);
   const tilesHTML = tokens
     .map((t, i) => `
-      <button class="sb-tile card-interactive animate-fadeInUp" data-token="${t}" style="animation-delay:${i * 0.04}s">
-        ${t}
+      <button class="sb-tile card-interactive animate-fadeInUp" data-token="${esc(t)}" style="animation-delay:${i * 0.04}s">
+        ${esc(t)}
       </button>
     `)
     .join('');

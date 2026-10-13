@@ -12,6 +12,7 @@
 //     items: [ { de:'der Hund', cat:'animale' }, { de:'das Brot', cat:'mancare' }, ... ]
 //   }
 
+import { esc } from '../utils/html.js';
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -26,8 +27,8 @@ export function renderSortCategories(exercise) {
   const chipsHTML = items
     .map((it, i) => `
       <button class="sc-item card-interactive animate-fadeInUp"
-              data-de="${it.de}" data-cat="${it.cat}" style="animation-delay:${i * 0.05}s">
-        ${it.de}
+              data-de="${esc(it.de)}" data-cat="${esc(it.cat)}" style="animation-delay:${i * 0.05}s">
+        ${esc(it.de)}
       </button>
     `)
     .join('');
